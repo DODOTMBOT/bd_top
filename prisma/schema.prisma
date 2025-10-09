@@ -1,0 +1,150 @@
+// ---------- Prisma 6.17 schema ----------
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  PLATFORM_OWNER
+  OWNER
+  PARTNER
+  POINT
+  EMPLOYEE
+}
+
+// Партнёр — владелец ресторанов
+model Partner {
+  id        String @id @default(cuid())
+  name      String
+  accountId String @unique
+  account   User   @relation(name: "PartnerAccount", fields: [accountId], references: [id], onDelete: SetNull, onUpdate: Restrict)
+  users     User[]
+  points    Point[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Точка (ресторан) — принадлежит Partner
+model Point {
+  id        String  @id @default(cuid())
+  name      String
+  address   String?
+  accountId String? @unique
+  account   User?   @relation(name: "PointAccount", fields: [accountId], references: [id], onDelete: SetNull, onUpdate: Restrict)
+  partnerId String
+  partner   Partner @relation(fields: [partnerId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  users     User[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([partnerId])
+}
+
+// Пользователь: PLATFORM_OWNER / OWNER / PARTNER / POINT / EMPLOYEE
+model User {
+  id           String @id @default(cuid())
+  email        String @unique
+  login        String? @unique
+  name         String?
+  passwordHash String
+  role         Role   @default(PARTNER)
+  mustChangePassword Boolean @default(false)
+
+  // PARTNER-пользователь принадлежит Partner
+  partnerId String?
+  partner   Partner? @relation(fields: [partnerId], references: [id], onDelete: SetNull, onUpdate: Restrict)
+
+  // POINT-пользователь принадлежит Point
+  pointId String?
+  point   Point?  @relation(fields: [pointId], references: [id], onDelete: SetNull, onUpdate: Restrict)
+
+  // NextAuth adapter fields
+  emailVerified DateTime?
+  image         String?
+
+  // NextAuth adapter relations
+  accounts Account[]
+  sessions Session[]
+
+  // Обратные связи для аккаунтов партнёра и точки
+  partnerAccount Partner? @relation(name: "PartnerAccount")
+  pointAccount   Point?   @relation(name: "PointAccount")
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([role])
+  @@index([partnerId])
+  @@index([pointId])
+}
+
+// Реестр страниц (для RBAC на уровне страниц)
+model Page {
+  id             String           @id @default(cuid())
+  path           String           @unique
+  name           String
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  RolePageAccess RolePageAccess[]
+}
+
+// Матрица доступов роли к странице
+model RolePageAccess {
+  id     String @id @default(cuid())
+  role   Role
+  pageId String
+  page   Page   @relation(fields: [pageId], references: [id])
+
+  canRead   Boolean @default(true)
+  canWrite  Boolean @default(false)
+  canManage Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([role, pageId])
+  @@index([role])
+  @@index([pageId])
+}
+
+// NextAuth Adapter Models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}

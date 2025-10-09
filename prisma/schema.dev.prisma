@@ -1,0 +1,104 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+enum Role {
+  OWNER
+  PARTNER
+  POINT
+  USER
+}
+
+// Партнёр — владелец ресторанов; у него есть "аккаунт" User с ролью PARTNER
+model Partner {
+  id        String @id @default(cuid())
+  name      String
+  accountId String @unique
+  account   User   @relation(name: "PartnerAccount", fields: [accountId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  points    Point[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Точка (ресторан) — принадлежит Partner; у точки свой "аккаунт" User с ролью POINT
+model Point {
+  id        String  @id @default(cuid())
+  name      String
+  address   String?
+  partnerId String
+  partner   Partner @relation(fields: [partnerId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  accountId String @unique
+  account   User   @relation(name: "PointAccount", fields: [accountId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  employees User[] @relation("PointEmployees")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([partnerId])
+}
+
+// Пользователь: OWNER / PARTNER / POINT / USER
+model User {
+  id           String @id @default(cuid())
+  email        String @unique
+  login        String? @unique
+  name         String?
+  passwordHash String
+  role         Role
+  mustChangePassword Boolean @default(false)
+
+  // USER-сотрудник привязан к конкретной точке
+  pointId String?
+  point   Point?  @relation(name: "PointEmployees", fields: [pointId], references: [id], onDelete: SetNull, onUpdate: Restrict)
+
+  // необязательная ссылка для будущих сценариев: пользователь может быть связан с партнёром
+  partnerId String?
+
+  // обратные связи для аккаунтов партнёра и точки
+  partnerAccount Partner? @relation(name: "PartnerAccount")
+  pointAccount   Point?   @relation(name: "PointAccount")
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([role])
+  @@index([pointId])
+}
+
+// Реестр страниц (для RBAC на уровне страниц)
+model Page {
+  id             String           @id @default(cuid())
+  path           String           @unique
+  name           String
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  RolePageAccess RolePageAccess[]
+}
+
+// Матрица доступов роли к странице
+model RolePageAccess {
+  id     String @id @default(cuid())
+  role   Role
+  pageId String
+  page   Page   @relation(fields: [pageId], references: [id])
+
+  canRead   Boolean @default(true)
+  canWrite  Boolean @default(false)
+  canManage Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([role, pageId])
+  @@index([role])
+  @@index([pageId])
+}
