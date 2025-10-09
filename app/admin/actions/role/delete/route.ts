@@ -10,7 +10,7 @@ export async function POST(req: Request) {
       where: { id },
     });
   } catch (error) {
-    return NextResponse.redirect(new URL('/admin/roles?error=Could not delete role', req.url));
+    return NextResponse.redirect(new URL('/admin/roles?error=Не удалось удалить роль', req.url));
   }
 
   return NextResponse.redirect(new URL('/admin/roles', req.url));

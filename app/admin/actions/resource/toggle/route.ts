@@ -13,7 +13,7 @@ export async function POST(req: Request) {
       data: { isActive },
     });
   } catch (error) {
-    return NextResponse.redirect(new URL('/admin/resources?error=Could not toggle resource', req.url));
+    return NextResponse.redirect(new URL('/admin/resources?error=Не удалось изменить статус ресурса', req.url));
   }
 
   return NextResponse.redirect(new URL('/admin/resources', req.url));

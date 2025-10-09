@@ -10,7 +10,7 @@ export async function POST(req: Request) {
       where: { id },
     });
   } catch (error) {
-    return NextResponse.redirect(new URL('/admin/resources?error=Could not delete resource', req.url));
+    return NextResponse.redirect(new URL('/admin/resources?error=Не удалось удалить ресурс', req.url));
   }
 
   return NextResponse.redirect(new URL('/admin/resources', req.url));

@@ -7,7 +7,7 @@ export async function POST(req: Request) {
   const pattern = String(form.get('pattern'));
 
   if (!pattern) {
-    return NextResponse.redirect(new URL('/admin/resources?error=Pattern required', req.url));
+    return NextResponse.redirect(new URL('/admin/resources?error=Требуется паттерн ресурса', req.url));
   }
 
   try {
@@ -16,11 +16,11 @@ export async function POST(req: Request) {
         kind, 
         pattern, 
         name: `${kind}: ${pattern}`,
-        description: `Resource pattern: ${pattern}`,
+        description: `Паттерн ресурса: ${pattern}`,
       },
     });
   } catch (error) {
-    return NextResponse.redirect(new URL('/admin/resources?error=Resource already exists', req.url));
+    return NextResponse.redirect(new URL('/admin/resources?error=Ресурс уже существует', req.url));
   }
 
   return NextResponse.redirect(new URL('/admin/resources', req.url));

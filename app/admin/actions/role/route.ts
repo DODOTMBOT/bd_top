@@ -6,15 +6,15 @@ export async function POST(req: Request) {
   const name = String(form.get('name'));
 
   if (!name) {
-    return NextResponse.redirect(new URL('/admin/roles?error=Name required', req.url));
+    return NextResponse.redirect(new URL('/admin/roles?error=Требуется название роли', req.url));
   }
 
   try {
     await prisma.rbacRole.create({
-      data: { name, description: `Role: ${name}` },
+      data: { name, description: `Роль: ${name}` },
     });
   } catch (error) {
-    return NextResponse.redirect(new URL('/admin/roles?error=Role already exists', req.url));
+    return NextResponse.redirect(new URL('/admin/roles?error=Роль уже существует', req.url));
   }
 
   return NextResponse.redirect(new URL('/admin/roles', req.url));
