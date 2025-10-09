@@ -74,6 +74,9 @@ model User {
   partnerAccount Partner? @relation(name: "PartnerAccount")
   pointAccount   Point?   @relation(name: "PointAccount")
 
+  // RBAC relations
+  roles UserRole[]
+
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -147,4 +150,48 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+// RBAC Models
+model RbacRole {
+  id          String      @id @default(cuid())
+  name        String      @unique   // 'owner' | 'partner' | 'employee' | ...
+  description String?
+  users       UserRole[]
+  grants      RoleGrant[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model UserRole {
+  userId String
+  roleId String
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role   RbacRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+}
+
+model Resource {               // объект доступа
+  id          String    @id @default(cuid())
+  kind        String              // 'page' | 'api' | 'feature'
+  pattern     String              // например: '/admin/*' или '/api/private/*'
+  name        String?
+  description String?
+  isActive    Boolean   @default(true)
+  grants      RoleGrant[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model RoleGrant {
+  id         String   @id @default(cuid())
+  roleId     String
+  resourceId String
+  access     String   // 'allow' | 'deny'
+
+  role       RbacRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, resourceId])
 }
