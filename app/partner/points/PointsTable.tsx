@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell, Button } from "@/components/ui";
 
 type Point = { id: string; name: string; login?: string; address?: string };
 
@@ -27,53 +28,36 @@ export default function PointsTable({ points }: { points: Point[] }) {
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Название
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Логин
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Пароль
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Адрес
-            </th>
-          </tr>
-        </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
-          {points.map((p) => (
-            <tr key={p.id} className="hover:bg-gray-50">
-              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                {p.name}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {p.login || ''}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                <button
-                  className="bg-blue-100 text-blue-700 px-3 py-1 rounded text-sm hover:bg-blue-200 transition-colors"
-                  onClick={() => {
-                    const value = secret && secret.pointId === p.id ? secret.password : '********';
-                    navigator.clipboard.writeText(value);
-                  }}
-                  title="Скопировать пароль"
-                >
-                  Копировать
-                </button>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {p.address || ''}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <Table aria-label="Список точек">
+      <TableHeader>
+        <TableColumn>Название</TableColumn>
+        <TableColumn>Логин</TableColumn>
+        <TableColumn>Пароль</TableColumn>
+        <TableColumn>Адрес</TableColumn>
+      </TableHeader>
+      <TableBody>
+        {points.map((p) => (
+          <TableRow key={p.id}>
+            <TableCell>{p.name}</TableCell>
+            <TableCell>{p.login || ''}</TableCell>
+            <TableCell>
+              <Button
+                color="primary"
+                variant="flat"
+                size="sm"
+                onClick={() => {
+                  const value = secret && secret.pointId === p.id ? secret.password : '********';
+                  navigator.clipboard.writeText(value);
+                }}
+              >
+                Копировать
+              </Button>
+            </TableCell>
+            <TableCell>{p.address || ''}</TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
   );
 }
 

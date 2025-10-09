@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import Link from "next/link";
 import { Shield, Store, IdCard, Users } from "lucide-react";
+import { Card, CardBody, CardHeader, Button, Badge } from "@/components/ui";
 
 export default async function RolesPage() {
   const session = await auth();
@@ -42,44 +43,46 @@ export default async function RolesPage() {
           <p className="text-gray-500 mt-1">Выберите раздел для работы</p>
         </div>
 
-        <div className="min-w-[220px] p-4 bg-gray-100 rounded-lg">
-          <div className="text-sm font-medium">{email}</div>
-          <div className="text-xs text-gray-500">{role}</div>
-        </div>
+        <Badge content={role} color="primary" variant="flat">
+          <div className="min-w-[220px] p-4 bg-gray-100 rounded-lg">
+            <div className="text-sm font-medium">{email}</div>
+            <div className="text-xs text-gray-500">{role}</div>
+          </div>
+        </Badge>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {tiles.map((t) => (
-          <Link
-            key={t.href}
-            href={t.href}
-            className="block p-6 bg-white border border-gray-200 rounded-lg hover:shadow-md transition-shadow"
-          >
-            <div className="flex items-center gap-3 mb-4">
+          <Card key={t.href} className="hover:shadow-md transition-shadow" isPressable as={Link} href={t.href}>
+            <CardHeader className="flex flex-row items-center gap-3">
               <div className="rounded-xl bg-blue-100 p-2">{t.icon}</div>
               <div className="flex flex-col">
                 <span className="font-medium">{t.title}</span>
                 <span className="text-xs text-gray-500">{t.desc}</span>
               </div>
-            </div>
-            <button className="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors">
-              Перейти
-            </button>
-          </Link>
+            </CardHeader>
+            <CardBody>
+              <Button color="primary" className="w-full">
+                Перейти
+              </Button>
+            </CardBody>
+          </Card>
         ))}
       </div>
 
-      <div className="p-4 bg-gray-50 border border-dashed border-gray-300 rounded-lg">
-        <div className="flex flex-wrap items-center gap-3">
-          <span className="text-sm text-gray-500">Быстрые действия:</span>
-          <Link href="/partner/points" className="bg-blue-100 text-blue-700 px-3 py-1 rounded text-sm hover:bg-blue-200">
-            Мои точки
-          </Link>
-          <Link href="/login" className="bg-gray-100 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-200">
-            Сменить пользователя
-          </Link>
-        </div>
-      </div>
+      <Card className="bg-gray-50 border-dashed">
+        <CardBody>
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="text-sm text-gray-500">Быстрые действия:</span>
+            <Button as={Link} href="/partner/points" color="primary" variant="flat" size="sm">
+              Мои точки
+            </Button>
+            <Button as={Link} href="/login" variant="flat" size="sm">
+              Сменить пользователя
+            </Button>
+          </div>
+        </CardBody>
+      </Card>
     </div>
   );
 }

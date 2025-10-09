@@ -1,8 +1,9 @@
 import { checkAccess } from "@/lib/rbac";
 import DbDown from "@/components/DbDown";
+import { Card, CardBody, Alert } from "@/components/ui";
 
 function Denied() {
-  return <div className="p-4 border border-red-300 bg-red-50 rounded">Нет доступа</div>;
+  return <Alert color="danger" title="Доступ запрещен" description="Нет доступа" />;
 }
 
 export default async function OwnerPage() {
@@ -18,10 +19,14 @@ export default async function OwnerPage() {
     return <Denied />;
   }
   return (
-    <section className="space-y-3">
+    <section className="space-y-6">
       <h1 className="text-2xl font-semibold">Панель OWNER</h1>
       <p className="opacity-70">Вы вошли как {res.session?.user?.email || 'Неизвестный пользователь'}</p>
-      <div className="border rounded p-4">Здесь будет управление сервисом.</div>
+      <Card>
+        <CardBody>
+          <p>Здесь будет управление сервисом.</p>
+        </CardBody>
+      </Card>
     </section>
   );
 }
