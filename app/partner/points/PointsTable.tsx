@@ -28,34 +28,34 @@ export default function PointsTable({ points }: { points: Point[] }) {
   }
 
   return (
-    <Table aria-label="Список точек">
+    <Table aria-label="Список точек" items={points}>
       <TableHeader>
-        <TableColumn>Название</TableColumn>
-        <TableColumn>Логин</TableColumn>
-        <TableColumn>Пароль</TableColumn>
-        <TableColumn>Адрес</TableColumn>
+        <TableColumn key="name">Название</TableColumn>
+        <TableColumn key="login">Логин</TableColumn>
+        <TableColumn key="password">Пароль</TableColumn>
+        <TableColumn key="address">Адрес</TableColumn>
       </TableHeader>
       <TableBody>
-        {points.map((p) => (
-          <TableRow key={p.id}>
-            <TableCell>{p.name}</TableCell>
-            <TableCell>{p.login || ''}</TableCell>
+        {(item) => (
+          <TableRow key={item.id}>
+            <TableCell>{item.name}</TableCell>
+            <TableCell>{item.login || ''}</TableCell>
             <TableCell>
               <Button
                 color="primary"
                 variant="flat"
                 size="sm"
                 onClick={() => {
-                  const value = secret && secret.pointId === p.id ? secret.password : '********';
+                  const value = secret && secret.pointId === item.id ? secret.password : '********';
                   navigator.clipboard.writeText(value);
                 }}
               >
                 Копировать
               </Button>
             </TableCell>
-            <TableCell>{p.address || ''}</TableCell>
+            <TableCell>{item.address || ''}</TableCell>
           </TableRow>
-        ))}
+        )}
       </TableBody>
     </Table>
   );
