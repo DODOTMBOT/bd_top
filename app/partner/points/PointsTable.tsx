@@ -1,11 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell, Button } from "@/components/ui";
+import {
+  Table, TableHeader, TableColumn,
+  TableBody, TableRow, TableCell,
+  Button
+} from "@heroui/react";
 
-type Point = { id: string; name: string; login?: string; address?: string };
+type PointRow = {
+  id: string;
+  name: string;
+  address?: string | null;
+  account?: { login: string | null } | null;
+};
 
-export default function PointsTable({ points }: { points: Point[] }) {
+export function PointsTable({ items }: { items: PointRow[] }) {
   const [secret, setSecret] = useState<{ pointId: string; password: string } | null>(null);
   
   useEffect(() => {
@@ -19,27 +28,24 @@ export default function PointsTable({ points }: { points: Point[] }) {
     }
   }, []);
 
-  if (!Array.isArray(points) || points.length === 0) {
-    return (
-      <div className="text-center py-8 text-gray-500">
-        <p>Пока нет точек</p>
-      </div>
-    );
-  }
-
   return (
-    <Table aria-label="Список точек" items={points}>
+    <Table aria-label="Мои точки">
       <TableHeader>
         <TableColumn key="name">Название</TableColumn>
         <TableColumn key="login">Логин</TableColumn>
         <TableColumn key="password">Пароль</TableColumn>
         <TableColumn key="address">Адрес</TableColumn>
       </TableHeader>
-      <TableBody>
+
+      <TableBody
+        items={items}
+        emptyContent="Точек пока нет"
+        loadingContent="Загрузка..."
+      >
         {(item) => (
           <TableRow key={item.id}>
             <TableCell>{item.name}</TableCell>
-            <TableCell>{item.login || ''}</TableCell>
+            <TableCell>{item.account?.login ?? "-"}</TableCell>
             <TableCell>
               <Button
                 color="primary"
@@ -53,7 +59,7 @@ export default function PointsTable({ points }: { points: Point[] }) {
                 Копировать
               </Button>
             </TableCell>
-            <TableCell>{item.address || ''}</TableCell>
+            <TableCell>{item.address ?? "-"}</TableCell>
           </TableRow>
         )}
       </TableBody>

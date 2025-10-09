@@ -61,7 +61,7 @@ export async function createPointAction(fd: FormData): Promise<Result> {
       const pointAccount = await tx.user.create({
         data: {
           login,
-          email: email || undefined,
+          email: email || null,
           role: 'POINT',
           passwordHash,
           mustChangePassword: false,
@@ -101,27 +101,16 @@ export async function createPointAction(fd: FormData): Promise<Result> {
 
 export async function listPointsAction() {
   const partner = await requirePartnerFromSession();
-  const points = await prisma.point.findMany({
+  return prisma.point.findMany({
     where: { partnerId: partner.id },
     select: {
       id: true,
       name: true,
       address: true,
       account: { select: { login: true } },
-      createdAt: true,
     },
     orderBy: { createdAt: "desc" },
   });
-  // нормализуем структуру под таблицу
-  return {
-    points: points.map((p) => ({ 
-      id: p.id, 
-      name: p.name, 
-      login: p.account?.login ?? '', 
-      address: p.address ?? '',
-      createdAt: p.createdAt
-    })),
-  };
 }
 
 

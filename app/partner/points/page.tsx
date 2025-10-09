@@ -1,5 +1,5 @@
 import { listPointsAction } from './actions'
-import PointsTable from './PointsTable'
+import { PointsTable } from './PointsTable'
 import NewPointForm from './NewPointForm'
 import { requirePartnerFromSession } from '@/lib/partner'
 import { Card, CardBody, CardHeader, Button, Alert } from '@/components/ui'
@@ -7,7 +7,7 @@ import { Card, CardBody, CardHeader, Button, Alert } from '@/components/ui'
 export default async function PartnerPointsPage({ searchParams }: { searchParams?: Record<string, string | undefined> }) {
   try {
     const partner = await requirePartnerFromSession()
-    const { points } = await listPointsAction()
+    const points = await listPointsAction()
     const created = searchParams?.created === '1'
     const error = searchParams?.error ?? ''
 
@@ -31,14 +31,7 @@ export default async function PartnerPointsPage({ searchParams }: { searchParams
             <h2 className="text-lg font-semibold">Список точек</h2>
           </CardHeader>
           <CardBody>
-            {Array.isArray(points) && points.length > 0 ? (
-              <PointsTable points={points} />
-            ) : (
-              <div className="text-center py-8 text-gray-500">
-                <p>Нет точек</p>
-                <p className="text-sm mt-2">Создайте первую точку с помощью формы выше</p>
-              </div>
-            )}
+            <PointsTable items={points} />
           </CardBody>
         </Card>
       </div>
