@@ -3,7 +3,7 @@
 import { useState, FormEvent } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { registerPartnerAction } from './actions'
-import { Alert } from '@nextui-org/react'
+import { Alert } from '@/components/ui/alert'
 
 export default function RegisterPartnerPage() {
   const router = useRouter()

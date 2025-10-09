@@ -1,6 +1,6 @@
 "use client";
 
-import { Alert } from "@nextui-org/react";
+import { Alert } from "@/components/ui/alert";
 
 export default function DbDown({ className }: { className?: string }) {
   return (

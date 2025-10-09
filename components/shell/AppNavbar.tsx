@@ -1,5 +1,5 @@
 "use client";
-import { Navbar, NavbarBrand, NavbarContent, NavbarItem } from "@nextui-org/react";
+import { Navbar, NavbarBrand, NavbarContent, NavbarItem } from "@/components/ui/navbar";
 import Link from "next/link";
 import LogoutButton from "@/components/auth/LogoutButton";
 import ThemeSwitch from "@/components/theme/ThemeSwitch";

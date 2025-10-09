@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Switch } from "@nextui-org/react";
+import { Switch } from "@/components/ui/switch";
 import { useTheme } from "next-themes";
 
 const Sun = () => (

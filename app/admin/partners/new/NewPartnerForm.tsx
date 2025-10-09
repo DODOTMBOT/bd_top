@@ -1,7 +1,9 @@
 "use client"
 
 import { useState, useEffect } from 'react'
-import { Button, Input, Select, SelectItem } from '@nextui-org/react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Select, SelectItem } from '@/components/ui/select'
 import { createPartnerAction, getAvailableAccounts } from './actions'
 
 type Account = {

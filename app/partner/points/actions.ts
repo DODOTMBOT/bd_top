@@ -61,7 +61,7 @@ export async function createPointAction(fd: FormData): Promise<Result> {
       const pointAccount = await tx.user.create({
         data: {
           login,
-          email: email || null,
+          email: email || undefined,
           role: 'POINT',
           passwordHash,
           mustChangePassword: false,
