@@ -6,9 +6,10 @@ export async function GET() {
   try {
     await prisma.$queryRawUnsafe("SELECT 1");
     return Response.json({ ok: true });
-  } catch (e: any) {
-    console.error("[DB][PING]", e.code ?? e.name, e.message);
-    return new Response(JSON.stringify({ ok: false, code: e.code, message: e.message }), { status: 500 });
+  } catch (e: unknown) {
+    const error = e as { message?: string };
+    console.error("[DB][PING]", error.message);
+    return new Response(JSON.stringify({ ok: false, message: error.message }), { status: 500 });
   }
 }
 

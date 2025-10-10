@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server'
+
+export const runtime = 'nodejs';
 import { z } from 'zod'
 import bcryptjs from 'bcryptjs'
 import { prisma, dbPing, isP1001 } from '@/lib/prisma'
-import { Role } from '@prisma/client'
+import { UserRoleType } from '@prisma/client'
 
 const registerSchema = z.object({
   email: z.string().email(),
@@ -42,7 +44,7 @@ export async function POST(req: Request) {
 
     const passwordHash = await bcryptjs.hash(password, 10)
     await prisma.user.create({
-      data: { email, name: name || null, passwordHash, role: Role.EMPLOYEE },
+      data: { email, name: name || null, passwordHash, role: UserRoleType.EMPLOYEE },
     })
     return NextResponse.json({ ok: true }, { status: 201 })
   } catch (e) {

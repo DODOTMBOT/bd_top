@@ -1,8 +1,9 @@
-import { NextRequest } from 'next/server';
-import { auth } from '@/lib/auth';
+import { auth } from '@/lib/auth'
+
+export const runtime = 'nodejs';
 import { prisma } from '@/lib/prisma';
 
-export async function getSessionQuick(req: NextRequest): Promise<{ userId: string; roles: string[] } | null> {
+export async function getSessionQuick(): Promise<{ userId: string; roles: string[] } | null> {
   try {
     const session = await auth();
     if (!session?.user?.id) return null;
@@ -13,7 +14,7 @@ export async function getSessionQuick(req: NextRequest): Promise<{ userId: strin
       include: { role: true },
     });
 
-    const roles = userRoles.map(ur => ur.role.name);
+    const roles = userRoles.map(ur => ur.role.key);
     
     return {
       userId: session.user.id,

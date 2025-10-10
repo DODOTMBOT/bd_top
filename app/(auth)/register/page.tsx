@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, FormEvent } from 'react'
+import { useState, FormEvent, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { registerPartnerAction } from './actions'
 import { Alert } from '@/components/ui/alert'
 
-export default function RegisterPartnerPage() {
+function RegisterForm() {
   const router = useRouter()
   const search = useSearchParams()
   const cb = search.get('cb') || '/partner'
@@ -52,6 +52,14 @@ export default function RegisterPartnerPage() {
       </form>
       <p className="text-sm mt-4">Уже есть аккаунт? <a className="underline" href={`/login?cb=${encodeURIComponent(cb)}`}>Войти</a></p>
     </div>
+  )
+}
+
+export default function RegisterPartnerPage() {
+  return (
+    <Suspense fallback={<div>Загрузка...</div>}>
+      <RegisterForm />
+    </Suspense>
   )
 }
 

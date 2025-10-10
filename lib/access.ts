@@ -18,7 +18,7 @@ export async function guardPointView(pointId: string) {
     redirect(`/login?cb=${encodeURIComponent(`/partner/points/${pointId}`)}`);
   }
 
-  const me = session.user as any;
+  const me = session.user as { id?: string; role?: string; partnerId?: string | null };
   const role = me.role as Role | undefined;
 
   const point = await prisma.point.findUnique({

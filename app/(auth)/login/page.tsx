@@ -1,11 +1,11 @@
 "use client"
 
-import { useState, useEffect, FormEvent } from 'react'
+import { useState, useEffect, FormEvent, Suspense } from 'react'
 import { signIn, useSession } from 'next-auth/react'
 import { useSearchParams, useRouter } from 'next/navigation'
 
-export default function LoginPage() {
-  const { data: session, status } = useSession()
+function LoginForm() {
+  const { status } = useSession()
   const search = useSearchParams()
   const router = useRouter()
   const callbackUrl = search.get('cb') || '/'
@@ -82,6 +82,14 @@ export default function LoginPage() {
       </form>
       <p className="text-sm mt-4">Нет аккаунта? <a className="underline" href="/register">Зарегистрироваться как партнёр</a></p>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div>Загрузка...</div>}>
+      <LoginForm />
+    </Suspense>
   )
 }
 

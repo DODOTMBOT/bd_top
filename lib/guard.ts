@@ -17,7 +17,7 @@ export async function guard(path: keyof typeof ACCESS) {
     redirect(`/login?cb=${encodeURIComponent(path)}`);
   }
 
-  const role = (session.user as any).role as Role | undefined;
+  const role = (session.user as { role?: string }).role as Role | undefined;
 
   if (!role || !ACCESS[path].includes(role)) {
     redirect('/');

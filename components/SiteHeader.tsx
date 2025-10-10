@@ -3,7 +3,7 @@ import { auth, signOut } from "@/lib/auth";
 
 export default async function SiteHeader() {
   const session = await auth();
-  const role = (session?.user as any)?.role as string | undefined;
+  const role = (session?.user as { role?: string })?.role as string | undefined;
 
   async function doSignOut() {
     "use server";

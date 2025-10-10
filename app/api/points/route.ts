@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+
+export const runtime = 'nodejs';
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/rbac";
-import { Role } from "@prisma/client";
 
 export async function GET() {
   try {
@@ -18,11 +19,12 @@ export async function GET() {
     });
 
     return NextResponse.json({ points });
-  } catch (error: any) {
-    if (error.message === "UNAUTHENTICATED") {
+  } catch (error: unknown) {
+    const err = error as { message?: string };
+    if (err.message === "UNAUTHENTICATED") {
       return NextResponse.json({ error: "UNAUTHENTICATED" }, { status: 401 });
     }
-    if (error.message === "FORBIDDEN") {
+    if (err.message === "FORBIDDEN") {
       return NextResponse.json({ error: "FORBIDDEN" }, { status: 403 });
     }
     return NextResponse.json({ error: "INTERNAL_ERROR" }, { status: 500 });
@@ -53,11 +55,12 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json({ id: point.id, name: point.name }, { status: 201 });
-  } catch (error: any) {
-    if (error.message === "UNAUTHENTICATED") {
+  } catch (error: unknown) {
+    const err = error as { message?: string };
+    if (err.message === "UNAUTHENTICATED") {
       return NextResponse.json({ error: "UNAUTHENTICATED" }, { status: 401 });
     }
-    if (error.message === "FORBIDDEN") {
+    if (err.message === "FORBIDDEN") {
       return NextResponse.json({ error: "FORBIDDEN" }, { status: 403 });
     }
     return NextResponse.json({ error: "INTERNAL_ERROR" }, { status: 500 });

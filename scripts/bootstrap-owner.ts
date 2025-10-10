@@ -6,10 +6,10 @@ export async function bootstrapOwnerIfNeeded(ownerEmails: string[]) {
   if (!ownerEmails.length) return;
 
   // роль owner
-  let owner = await prisma.rbacRole.findUnique({ where: { name: OWNER_ROLE } });
+  let owner = await prisma.role.findUnique({ where: { key: 'OWNER' } });
   if (!owner) {
-    owner = await prisma.rbacRole.create({
-      data: { name: OWNER_ROLE, description: 'Full access' },
+    owner = await prisma.role.create({
+      data: { key: 'OWNER', name: 'Владелец', description: 'Full access' },
     });
   }
 

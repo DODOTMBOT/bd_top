@@ -3,7 +3,6 @@
 import { prisma, isP1001, dbPing } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { signIn } from "@/lib/auth";
-import { redirect } from "next/navigation";
 
 type Input = { name: string; email: string; password: string; partnerName?: string };
 
@@ -31,20 +30,22 @@ export async function registerPartnerAction({ name, email, password, partnerName
 
     // Создаем Partner и User в транзакции
     const result = await prisma.$transaction(async (tx) => {
-      const partner = await tx.partner.create({ 
-        data: { name: partnerName ?? "Новый партнёр" }
-      });
-
       const user = await tx.user.create({
         data: {
           name: (name || 'Партнёр').trim(),
           email: emailLower,
           role: "PARTNER",
           passwordHash,
-          partnerId: partner.id,
           mustChangePassword: false,
         },
-        select: { id: true, role: true, partnerId: true, email: true },
+        select: { id: true, role: true, email: true },
+      });
+
+      const partner = await tx.partner.create({ 
+        data: { 
+          name: partnerName ?? "Новый партнёр",
+          account: { connect: { id: user.id } }
+        }
       });
 
       return { user, partner };
@@ -53,16 +54,16 @@ export async function registerPartnerAction({ name, email, password, partnerName
     // best-effort авто-логин (без падения)
     try {
       const res = await signIn("credentials", { redirect: false, identifier: emailLower, password });
-      if ((res as any)?.error) {
-        return { ok: true, userId: result.user.id, role: result.user.role, partnerId: result.user.partnerId! };
+      if ((res as { error?: string })?.error) {
+        return { ok: true, userId: result.user.id, role: result.user.role, partnerId: result.partner.id };
       }
     } catch {
       // игнорируем
     }
 
-    return { ok: true, userId: result.user.id, role: result.user.role, partnerId: result.user.partnerId! };
-  } catch (e: any) {
-    if (e?.code === "P2002" || /unique/i.test(String(e?.message))) {
+    return { ok: true, userId: result.user.id, role: result.user.role, partnerId: result.partner.id };
+  } catch (e: unknown) {
+    if ((e as { code?: string; message?: string })?.code === "P2002" || /unique/i.test(String((e as { message?: string })?.message))) {
       return { ok: false, code: "CONFLICT", message: "Этот email уже зарегистрирован" };
     }
     if (isP1001(e)) {

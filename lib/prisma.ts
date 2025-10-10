@@ -37,16 +37,14 @@ export async function isDbAvailable(timeoutMs = 1500): Promise<boolean> {
 export function isDbInitError(e: unknown): boolean {
   return (
     e instanceof Error &&
-    // @ts-ignore
-    (e.name === "PrismaClientInitializationError" || (e as any)?.code === "P1001")
+    (e.name === "PrismaClientInitializationError" || (e as { code?: string })?.code === "P1001")
   );
 }
 
 export function isP1001(e: unknown): boolean {
   return (
     e instanceof Error &&
-    // @ts-ignore
-    (((e as any)?.code === "P1001") || ((e as any)?.name === "PrismaClientInitializationError"))
+    (((e as { code?: string })?.code === "P1001") || ((e as { name?: string })?.name === "PrismaClientInitializationError"))
   );
 }
 

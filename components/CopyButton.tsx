@@ -15,7 +15,7 @@ export default function CopyButton({ text, label = 'Копировать' }: Pro
     <button
       type="button"
       onClick={onCopy}
-      className="inline-flex items-center gap-1 rounded border px-2 py-1 text-xs hover:bg-gray-50"
+      className="inline-flex items-center gap-1 rounded border border-divider px-2 py-1 text-xs hover:bg-content2 bg-content1 text-foreground"
       title={label}
     >
       <span>📋</span>

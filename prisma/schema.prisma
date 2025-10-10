@@ -8,7 +8,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Role {
+enum UserRoleType {
   PLATFORM_OWNER
   OWNER
   PARTNER
@@ -51,7 +51,7 @@ model User {
   login        String? @unique
   name         String?
   passwordHash String
-  role         Role   @default(PARTNER)
+  role         UserRoleType   @default(PARTNER)
   mustChangePassword Boolean @default(false)
 
   // PARTNER-пользователь принадлежит Partner
@@ -99,7 +99,7 @@ model Page {
 // Матрица доступов роли к странице
 model RolePageAccess {
   id     String @id @default(cuid())
-  role   Role
+  role   UserRoleType
   pageId String
   page   Page   @relation(fields: [pageId], references: [id])
 
@@ -153,23 +153,34 @@ model VerificationToken {
 }
 
 // RBAC Models
+model Role {
+  id          String   @id @default(cuid())
+  key         String   @unique // e.g. "OWNER", "PARTNER", "POINT", "EMPLOYEE"
+  name        String
+  description String?
+  users       UserRole[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
 model RbacRole {
   id          String      @id @default(cuid())
   name        String      @unique   // 'owner' | 'partner' | 'employee' | ...
   description String?
-  users       UserRole[]
   grants      RoleGrant[]
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 }
 
 model UserRole {
-  userId String
-  roleId String
-  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  role   RbacRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  id        String   @id @default(cuid())
+  userId    String
+  roleId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
 
-  @@id([userId, roleId])
+  @@unique([userId, roleId])
 }
 
 model Resource {               // объект доступа

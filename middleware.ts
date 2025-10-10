@@ -16,7 +16,7 @@ export async function middleware(req: NextRequest) {
   // остальное оставить как есть (не ломаем текущие механизмы)
   if (!p.startsWith('/admin')) return NextResponse.next();
 
-  const sess = await getSessionQuick(req); // { userId, roles: string[] } | null
+  const sess = await getSessionQuick(); // { userId, roles: string[] } | null
   if (!sess?.userId) {
     const url = new URL('/login', req.url);
     url.searchParams.set('callbackUrl', req.nextUrl.pathname);
@@ -32,8 +32,8 @@ export async function middleware(req: NextRequest) {
     select: { id: true, pattern: true },
   });
 
-  const role = await prisma.rbacRole.findMany({
-    where: { name: { in: sess.roles } },
+  const role = await prisma.role.findMany({
+    where: { key: { in: sess.roles } },
     select: { id: true },
   });
 

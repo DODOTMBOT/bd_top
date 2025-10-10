@@ -1,0 +1,9 @@
+{
+  "defaultStyle": { "uiLibrary": "@heroui/react", "theme": "HeroUI v2.8.0", "useTailwind": true },
+  "rules": [
+    { "pattern": "app/**", "instructions": [
+      "Компоненты только из @heroui/react",
+      "Tailwind — для layout/spacing"
+    ]}
+  ]
+}

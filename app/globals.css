@@ -2,16 +2,29 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Базовые стили для корректного отображения */
-html,
-body {
-  @apply min-h-screen antialiased;
+/* Синий фон сайдбара */
+.sidebar-bg {
+  background: linear-gradient(180deg, #3163FF 0%, #2750D9 100%);
 }
 
-html {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/* Активный пункт: белая таблетка, «скошенный» белый выступ в центр */
+.sidebar-active {
+  background: #fff;
+  box-shadow: 0 6px 18px rgba(20,40,140,0.18);
+  color: #1E2A78;
 }
-
-
-
+.sidebar-active::after {
+  /* белая «капля», создающая эффект стыка с центральным белым блоком */
+  content: "";
+  position: absolute;
+  right: -16px;
+  top: 0;
+  height: 100%;
+  width: 16px;
+  background: #fff;
+  border-top-right-radius: 16px;
+  border-bottom-right-radius: 16px;
+}
+html.dark .sidebar-bg { background: linear-gradient(180deg, #1E2A78 0%, #18235E 100%); }
+html.dark .sidebar-active { background:#fff; color:#1E2A78; }
+html.dark .sidebar-active::after { background:#fff; }

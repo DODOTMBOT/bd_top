@@ -18,7 +18,7 @@ function envTrue(v: unknown) {
   return ['true','1','yes','on'].includes(String(v ?? '').trim().toLowerCase())
 }
 function isSignupEnabled() {
-  return envTrue((process.env as any)['ENABLE_PARTNER_SIGNUP'])
+  return envTrue((process.env as Record<string, string | undefined>)['ENABLE_PARTNER_SIGNUP'])
 }
 
 export async function GET() {
@@ -72,24 +72,25 @@ export async function POST(req: Request) {
     await prisma.user.update({ where: { id: accountUser.id }, data: { partnerId: partner.id } })
 
     return NextResponse.json({ ok: true, user: { ...accountUser, partnerId: partner.id } }, { status: 201 })
-  } catch (e: any) {
+  } catch (e: unknown) {
+    const error = e as { code?: string; message?: string };
     if (isP1001(e)) {
       return NextResponse.json({ error: 'DB_UNAVAILABLE' }, { status: 503 })
     }
-    if (e instanceof Prisma.PrismaClientKnownRequestError) {
-      if (e.code === 'P2002') {
-        return NextResponse.json({ error: 'conflict', code: e.code, meta: e.meta }, { status: 409 })
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2002') {
+        return NextResponse.json({ error: 'conflict', code: error.code, meta: error.meta }, { status: 409 })
       }
-      if (e.code === 'P2003') {
-        return NextResponse.json({ error: 'fk_failed', code: e.code, meta: e.meta }, { status: 400 })
+      if (error.code === 'P2003') {
+        return NextResponse.json({ error: 'fk_failed', code: error.code, meta: error.meta }, { status: 400 })
       }
-      return NextResponse.json({ error: 'prisma_known', code: e.code, meta: e.meta }, { status: 400 })
+      return NextResponse.json({ error: 'prisma_known', code: error.code, meta: error.meta }, { status: 400 })
     }
-    if (e instanceof Prisma.PrismaClientValidationError) {
-      console.error('[register.partner] validation_failed', e)
-      return NextResponse.json({ error: 'validation_failed', message: e.message }, { status: 400 })
+    if (error instanceof Prisma.PrismaClientValidationError) {
+      console.error('[register.partner] validation_failed', error)
+      return NextResponse.json({ error: 'validation_failed', message: error.message }, { status: 400 })
     }
-    console.error('[register.partner] unexpected', e)
+    console.error('[register.partner] unexpected', error)
     return NextResponse.json({ error: 'unexpected' }, { status: 500 })
   }
 }

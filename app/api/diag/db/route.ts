@@ -8,8 +8,9 @@ export async function GET() {
     await prisma.$queryRaw`SELECT 1`;
     const users = await prisma.user.count().catch(() => -1);
     return NextResponse.json({ ok: true, users });
-  } catch (e: any) {
-    return NextResponse.json({ ok: false, message: e?.message ?? "error" }, { status: 503 });
+  } catch (e: unknown) {
+    const error = e as { message?: string };
+    return NextResponse.json({ ok: false, message: error?.message ?? "error" }, { status: 503 });
   }
 }
 

@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
-import { Role } from "@prisma/client";
+import { UserRoleType } from "@prisma/client";
 
-export async function requireRole(roles: Role[]) {
+export async function requireRole(roles: UserRoleType[]) {
   const session = await auth();
   
   if (!session?.user) {
@@ -9,7 +9,7 @@ export async function requireRole(roles: Role[]) {
     throw new Error("UNAUTHENTICATED");
   }
 
-  if (!roles.includes(session.user.role as Role)) {
+  if (!roles.includes(session.user.role as UserRoleType)) {
     console.warn("[RBAC] forbid", { 
       path: "/partner/points", 
       user: session.user,

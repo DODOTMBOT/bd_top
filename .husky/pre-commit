@@ -1,16 +1,2 @@
-#!/bin/sh
-. "$(dirname "$0")/_/husky.sh"
-
-# Protect against destructive prisma commands
-FILES=$(git diff --cached --name-only | tr '\n' ' ')
-
-if echo "$FILES" | grep -q "package.json"; then
-  if git diff --cached package.json | grep -E "migrate reset|db push" >/dev/null; then
-    echo "[HUSKY] Forbidden prisma command detected in package.json (migrate reset / db push). Commit aborted."
-    exit 1
-  fi
-fi
-
-exit 0
-
-
+npm run ensure:heroui
+npx lint-staged

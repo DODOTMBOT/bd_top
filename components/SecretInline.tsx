@@ -14,7 +14,7 @@ export default function SecretInline({ login, password }: { login: string; passw
   };
 
   return (
-    <div className="mt-2 rounded-md border bg-gray-50 px-3 py-2 text-xs text-gray-800">
+    <div className="mt-2 rounded-md border border-divider bg-content2 px-3 py-2 text-xs text-foreground">
       <div className="flex flex-wrap items-center gap-2">
         <span className="font-medium">Логин:</span>
         <code>{login}</code>
