@@ -13,7 +13,7 @@ function prettyName(route: string) {
   return base ? base.replace(/(^|\s)\S/g, s => s.toUpperCase()) : "Главная";
 }
 
-type SortField = 'name' | 'route' | null;
+type SortField = 'name' | null;
 type SortDirection = 'asc' | 'desc';
 
 export default function PagesTab({ pages }: { pages: Row[] }) {
@@ -62,16 +62,8 @@ export default function PagesTab({ pages }: { pages: Row[] }) {
     if (!sortField) return localRows;
     
     return [...localRows].sort((a, b) => {
-      let aValue: string;
-      let bValue: string;
-      
-      if (sortField === 'name') {
-        aValue = prettyName(a.route);
-        bValue = prettyName(b.route);
-      } else {
-        aValue = a.route;
-        bValue = b.route;
-      }
+      const aValue = prettyName(a.route);
+      const bValue = prettyName(b.route);
       
       const comparison = aValue.localeCompare(bValue, 'ru');
       return sortDirection === 'asc' ? comparison : -comparison;
@@ -244,12 +236,6 @@ export default function PagesTab({ pages }: { pages: Row[] }) {
           </div>
         </td>
 
-        {/* Путь */}
-        <td className="text-default-500 py-3 px-4">
-          <code className={`text-sm ${isFolder ? 'text-blue-700 dark:text-blue-300' : ''}`}>
-            {page.route}
-          </code>
-        </td>
 
         {/* Действия: иконки */}
         <td className="py-3 px-4">
@@ -378,19 +364,13 @@ export default function PagesTab({ pages }: { pages: Row[] }) {
                     {getSortIcon('name')}
                   </div>
                 </th>
-                <th className="text-left py-3 px-4">
-                  <div className="flex items-center gap-2 cursor-pointer hover:text-primary transition-colors" onClick={() => handleSort('route')}>
-                    <span>Путь</span>
-                    {getSortIcon('route')}
-                  </div>
-                </th>
                 <th className="text-left py-3 px-4 w-0">Действия</th>
               </tr>
             </thead>
             <tbody>
               {sortedRows.length === 0 ? (
                 <tr>
-                  <td colSpan={3} className="text-center py-8 text-default-500">
+                  <td colSpan={2} className="text-center py-8 text-default-500">
                     Страниц и папок нет
                   </td>
                 </tr>

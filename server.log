@@ -1,0 +1,38 @@
+
+> saas-gpt-horeca@0.1.0 predev
+> kill-port 3001 || true
+
+Process on port 3001 killed
+
+> saas-gpt-horeca@0.1.0 dev
+> next dev -p 3001 -p 3001
+
+   ▲ Next.js 15.5.4
+   - Local:        http://localhost:3001
+   - Network:      http://10.10.30.143:3001
+   - Environments: .env.local
+   - Experiments (use with caution):
+     · serverActions
+
+ ✓ Starting...
+ ✓ Ready in 1880ms
+ ○ Compiling /middleware ...
+ ✓ Compiled /middleware in 834ms (273 modules)
+[DB] Host: 2b0376c914a5c5f8ecb79dd5.twc1.net:5432 DB: default_db
+ ○ Compiling /admin ...
+ ✓ Compiled /admin in 8.2s (5078 modules)
+ GET /admin 200 in 8826ms
+ ✓ Compiled in 785ms (2472 modules)
+ GET /admin 200 in 185ms
+ GET /admin 200 in 206ms
+ GET /admin 200 in 152ms
+ HEAD /admin 200 in 185ms
+ GET /admin 200 in 152ms
+ ✓ Compiled in 1228ms (5078 modules)
+ ✓ Compiled in 2.4s (5078 modules)
+ ✓ Compiled in 1035ms (2731 modules)
+ ✓ Compiled in 858ms (2731 modules)
+ ✓ Compiled in 745ms (2731 modules)
+ ✓ Compiled in 780ms (2731 modules)
+ ✓ Compiled in 627ms (2731 modules)
+ ✓ Compiled in 876ms (2731 modules)
