@@ -4,7 +4,7 @@ import {Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Input, Button}
 export default function CreatePageModal({
   isOpen, onOpenChange, createAction,
 }:{ isOpen:boolean; onOpenChange:(open:boolean)=>void;
-   createAction:(s:any, fd:FormData)=>Promise<{ok:boolean; error?:string}>; }) {
+   createAction:(s:unknown, fd:FormData)=>Promise<{ok:boolean; error?:string}>; }) {
   return (
     <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
       <ModalContent>

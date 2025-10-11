@@ -12,53 +12,8 @@ type PageNode = { type: "page"; name?: string; path: string };
 type FolderNode = { type: "folder"; name?: string; path: string; children?: Node[] };
 type Node = PageNode | FolderNode;
 
-// Type guards и утилиты
-function isRecord(v: unknown): v is Record<string, unknown> {
-  return typeof v === "object" && v !== null;
-}
 
-function asStr(v: unknown, def = ""): string { 
-  return typeof v === "string" ? v : def; 
-}
 
-function normPath(p: string): string { 
-  const s = p.trim().replace(/\/+$/, ""); 
-  return s === "" ? "/" : s.startsWith("/") ? s : `/${s}`; 
-}
-
-function toPage(x: unknown): PageNode | null {
-  if (!isRecord(x)) return null;
-  const type = asStr(x.type ?? x.kind);
-  const rawPath = asStr(x.path ?? x.url ?? "");
-  if (type !== "page" && rawPath === "") return null;
-  const path = normPath(rawPath);
-  const name = asStr(x.name ?? x.title ?? path.split("/").pop() ?? "");
-  return { type: "page", name, path };
-}
-
-function toFolder(x: unknown): FolderNode | null {
-  if (!isRecord(x)) return null;
-  const type = asStr(x.type ?? x.kind);
-  if (type !== "folder") return null;
-  const raw = asStr(x.path ?? x.url ?? asStr(x.name ?? x.title ?? ""));
-  const path = normPath(raw);
-  const name = asStr(x.name ?? x.title ?? path.split("/").pop() ?? "");
-  let children: Node[] | undefined;
-  const kids = (isRecord(x.children) || Array.isArray(x.children)) ? x.children
-             : (isRecord(x.items) || Array.isArray(x.items)) ? x.items
-             : undefined;
-  if (Array.isArray(kids)) {
-    const arr: Node[] = [];
-    for (const it of kids) {
-      const f = toFolder(it);
-      if (f) { arr.push(f); continue; }
-      const p = toPage(it);
-      if (p) arr.push(p);
-    }
-    children = arr;
-  }
-  return { type: "folder", name, path, children };
-}
 
 function absFromRoute(route: string) {
   const clean = route.replace(/^\/+/, "");
