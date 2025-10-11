@@ -1,21 +1,29 @@
-const { PrismaClient } = require("@prisma/client");
-const db = new PrismaClient();
+import { PrismaClient } from "@prisma/client";
 
-const BASE_ROLES = [
-  { key: "OWNER",   name: "Владелец",  description: "Full access" },
-  { key: "PARTNER", name: "Партнёр",   description: "Управление точками и персоналом" },
-  { key: "POINT",   name: "Точка",     description: "Работа точки и операции" },
-  { key: "EMPLOYEE",name: "Сотрудник", description: "Доступ сотрудника" },
-];
+const prisma = new PrismaClient();
 
 async function main() {
-  for (const r of BASE_ROLES) {
-    await db.role.upsert({
-      where: { key: r.key },
-      update: { name: r.name, description: r.description },
-      create: r,
+  const users = [
+    { email: "owner@example.com", roleKey: "owner", pointName: null, active: true },
+    { email: "partner@example.com", roleKey: "partner", pointName: "Cafe Aurora", active: true },
+    { email: "manager@example.com", roleKey: "manager", pointName: "Bar Nebula", active: true },
+    { email: "staff@example.com", roleKey: "employee", pointName: "Cafe Aurora", active: false },
+  ];
+
+  for (const u of users) {
+    await prisma.adminUser.upsert({
+      where: { email: u.email },
+      create: u,
+      update: u,
     });
   }
 }
 
-main().finally(() => db.$disconnect());
+main()
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

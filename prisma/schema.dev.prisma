@@ -7,98 +7,73 @@ datasource db {
   url      = "file:./dev.db"
 }
 
-enum Role {
-  OWNER
-  PARTNER
-  POINT
-  USER
-}
-
-// Партнёр — владелец ресторанов; у него есть "аккаунт" User с ролью PARTNER
 model Partner {
-  id        String @id @default(cuid())
+  id        String   @id @default(cuid())
   name      String
-  accountId String @unique
-  account   User   @relation(name: "PartnerAccount", fields: [accountId], references: [id], onDelete: Restrict, onUpdate: Restrict)
-
-  points    Point[]
+  accountId String   @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  account   User     @relation("PartnerAccount", fields: [accountId], references: [id], onUpdate: Restrict)
+  points    Point[]
 }
 
-// Точка (ресторан) — принадлежит Partner; у точки свой "аккаунт" User с ролью POINT
 model Point {
-  id        String  @id @default(cuid())
+  id        String   @id @default(cuid())
   name      String
   address   String?
   partnerId String
-  partner   Partner @relation(fields: [partnerId], references: [id], onDelete: Restrict, onUpdate: Restrict)
-
-  accountId String @unique
-  account   User   @relation(name: "PointAccount", fields: [accountId], references: [id], onDelete: Restrict, onUpdate: Restrict)
-
-  employees User[] @relation("PointEmployees")
-
+  accountId String   @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  account   User     @relation("PointAccount", fields: [accountId], references: [id], onUpdate: Restrict)
+  partner   Partner  @relation(fields: [partnerId], references: [id], onUpdate: Restrict)
+  employees User[]   @relation("PointEmployees")
 
   @@index([partnerId])
 }
 
-// Пользователь: OWNER / PARTNER / POINT / USER
 model User {
-  id           String @id @default(cuid())
-  email        String @unique
-  login        String? @unique
-  name         String?
-  passwordHash String
-  role         Role
-  mustChangePassword Boolean @default(false)
-
-  // USER-сотрудник привязан к конкретной точке
-  pointId String?
-  point   Point?  @relation(name: "PointEmployees", fields: [pointId], references: [id], onDelete: SetNull, onUpdate: Restrict)
-
-  // необязательная ссылка для будущих сценариев: пользователь может быть связан с партнёром
-  partnerId String?
-
-  // обратные связи для аккаунтов партнёра и точки
-  partnerAccount Partner? @relation(name: "PartnerAccount")
-  pointAccount   Point?   @relation(name: "PointAccount")
-
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                 String   @id @default(cuid())
+  email              String   @unique
+  login              String?  @unique
+  name               String?
+  passwordHash       String
+  role               Role
+  mustChangePassword Boolean  @default(false)
+  pointId            String?
+  partnerId          String?
+  isActive           Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  partnerAccount     Partner? @relation("PartnerAccount")
+  pointAccount       Point?   @relation("PointAccount")
+  point              Point?   @relation("PointEmployees", fields: [pointId], references: [id], onUpdate: Restrict)
 
   @@index([role])
   @@index([pointId])
 }
 
-// Реестр страниц (для RBAC на уровне страниц)
 model Page {
-  id             String           @id @default(cuid())
-  path           String           @unique
-  name           String
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
-  RolePageAccess RolePageAccess[]
-}
-
-// Матрица доступов роли к странице
-model RolePageAccess {
-  id     String @id @default(cuid())
-  role   Role
-  pageId String
-  page   Page   @relation(fields: [pageId], references: [id])
-
-  canRead   Boolean @default(true)
-  canWrite  Boolean @default(false)
-  canManage Boolean @default(false)
-
+  id        String   @id @default(cuid())
+  path      String   @unique
+  name      String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
 
-  @@unique([role, pageId])
-  @@index([role])
-  @@index([pageId])
+model RolePageAccess {
+  roleKey String
+  path    String
+  allowed Boolean @default(false)
+
+  @@id([roleKey, path])
+  @@index([roleKey])
+  @@index([path])
+}
+
+enum Role {
+  OWNER
+  PARTNER
+  POINT
+  USER
 }

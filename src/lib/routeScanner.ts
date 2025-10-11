@@ -58,3 +58,11 @@ export function slugifyPath(input: string): string {
     .replace(/^-+|-+$/g, "")
     .replace(/-+/g, "-");
 }
+
+// Функция для получения всех путей страниц (для API доступов)
+export async function scanAllRoutes(): Promise<{ path: string }[]> {
+  const routes = await scanAppRoutes();
+  return routes
+    .filter(route => route.kind === "page") // только страницы, не папки
+    .map(route => ({ path: route.route }));
+}

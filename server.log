@@ -36,3 +36,16 @@ Process on port 3001 killed
  ✓ Compiled in 780ms (2731 modules)
  ✓ Compiled in 627ms (2731 modules)
  ✓ Compiled in 876ms (2731 modules)
+ ✓ Compiled in 1866ms (2745 modules)
+ ✓ Compiled in 614ms (2472 modules)
+ ✓ Compiled in 937ms (2473 modules)
+ ✓ Compiled in 859ms (2473 modules)
+ ✓ Compiled in 471ms (2473 modules)
+   Reload env: .env
+ ✓ Compiled in 503ms (2732 modules)
+[DB] Host: 2b0376c914a5c5f8ecb79dd5.twc1.net:5432 DB: default_db
+ ○ Compiling /admin ...
+ ✓ Compiled /admin in 4.6s (2607 modules)
+ GET /admin 200 in 5185ms
+ GET /admin 200 in 193ms
+ GET /admin 200 in 134ms
