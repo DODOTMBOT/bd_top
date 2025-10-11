@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { promises as fs } from "fs";
 import path from "path";
 import { revalidatePath } from "next/cache";
-import { slugifyPath } from "@/src/lib/routeScanner";
+import { slugifyPath, scanAppRoutes } from "@/src/lib/routeScanner";
 
 const APP_DIR = path.join(process.cwd(), "app", "(app)");
 const KEEP = ".keep";
@@ -10,6 +10,25 @@ const KEEP = ".keep";
 function absFromRoute(route: string) {
   const clean = route.replace(/^\/+/, "");
   return path.join(APP_DIR, clean);
+}
+
+export async function GET() {
+  // получение структуры узлов для модалки доступа
+  try {
+    const routes = await scanAppRoutes();
+    
+    // преобразуем в древовидную структуру
+    const nodes = routes.map(route => ({
+      type: route.kind as "folder" | "page",
+      name: route.route.split("/").pop() || route.route,
+      path: route.route,
+      children: route.kind === "folder" ? [] : undefined
+    }));
+
+    return NextResponse.json({ nodes }, { status: 200 });
+  } catch (e: any) {
+    return NextResponse.json({ error: e?.message ?? "ERROR" }, { status: 500 });
+  }
 }
 
 export async function POST(req: Request) {
