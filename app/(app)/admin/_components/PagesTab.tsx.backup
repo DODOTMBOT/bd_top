@@ -1,0 +1,444 @@
+"use client";
+import Link from "next/link";
+import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
+import { ExternalLink, Trash2, ArrowUpDown, ArrowUp, ArrowDown, Folder, FolderOpen, Plus } from "lucide-react";
+import { Button, Chip, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Input, Table, TableHeader, TableColumn, TableBody, TableRow, TableCell, Tooltip } from "@heroui/react";
+
+type Row = { route:string; file:string; isDynamic:boolean; protected:boolean };
+type Folder = { id: string; name: string; pages: string[] }; // pages содержит route страниц
+type FolderData = { [folderId: string]: Folder };
+
+function prettyName(route: string) {
+  // берём последний сегмент, убираем [id], дефисы → пробелы, ПерваяБуква
+  const seg = route.split("/").filter(Boolean).pop() ?? "";
+  const base = seg.replace(/\[.*?\]/g, "").replace(/-/g, " ").trim();
+  return base ? base.replace(/(^|\s)\S/g, s => s.toUpperCase()) : "Главная";
+}
+
+type SortField = 'name' | 'route' | null;
+type SortDirection = 'asc' | 'desc';
+
+export default function PagesTab({ pages }: { pages: Row[] }) {
+  const router = useRouter();
+  const [localRows, setLocalRows] = useState<Row[]>(pages);
+  const [creating, setCreating] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [title, setTitle] = useState("");
+  const [createErr, setCreateErr] = useState<string | null>(null);
+  const [deletingSlug, setDeletingSlug] = useState<string | null>(null); // пер-кнопочный лоадинг
+  const [sortField, setSortField] = useState<SortField>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  
+  // Состояние для папок
+  const [folders, setFolders] = useState<FolderData>({});
+  const [createFolderOpen, setCreateFolderOpen] = useState(false);
+  const [folderName, setFolderName] = useState("");
+  const [creatingFolder, setCreatingFolder] = useState(false);
+  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
+
+  const canOpen = (r: Row) => !(r.isDynamic || /\[[^\]]+\]/.test(r.route));
+
+  // Sorting logic
+  const sortedRows = useMemo(() => {
+    if (!sortField) return localRows;
+    
+    return [...localRows].sort((a, b) => {
+      let aValue: string;
+      let bValue: string;
+      
+      if (sortField === 'name') {
+        aValue = prettyName(a.route);
+        bValue = prettyName(b.route);
+      } else {
+        aValue = a.route;
+        bValue = b.route;
+      }
+      
+      const comparison = aValue.localeCompare(bValue, 'ru');
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+  }, [localRows, sortField, sortDirection]);
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const getSortIcon = (field: SortField) => {
+    if (sortField !== field) return <ArrowUpDown className="size-4" />;
+    return sortDirection === 'asc' ? <ArrowUp className="size-4" /> : <ArrowDown className="size-4" />;
+  };
+
+  // Функции для работы с папками
+  const createFolder = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!folderName.trim()) return;
+    
+    setCreatingFolder(true);
+    try {
+      const folderId = `folder_${Date.now()}`;
+      const newFolder: Folder = {
+        id: folderId,
+        name: folderName.trim(),
+        pages: []
+      };
+      
+      setFolders(prev => ({ ...prev, [folderId]: newFolder }));
+      setFolderName("");
+      setCreateFolderOpen(false);
+    } finally {
+      setCreatingFolder(false);
+    }
+  };
+
+  const deleteFolder = (folderId: string) => {
+    setFolders(prev => {
+      const newFolders = { ...prev };
+      delete newFolders[folderId];
+      return newFolders;
+    });
+    // Убираем из развернутых
+    setExpandedFolders(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(folderId);
+      return newSet;
+    });
+  };
+
+  const toggleFolder = (folderId: string) => {
+    setExpandedFolders(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(folderId)) {
+        newSet.delete(folderId);
+      } else {
+        newSet.add(folderId);
+      }
+      return newSet;
+    });
+  };
+
+  const movePageToFolder = (pageRoute: string, folderId: string | null) => {
+    // Убираем страницу из всех папок
+    setFolders(prev => {
+      const newFolders = { ...prev };
+      Object.keys(newFolders).forEach(id => {
+        newFolders[id]!.pages = newFolders[id]!.pages.filter(route => route !== pageRoute);
+      });
+      
+      // Добавляем в новую папку, если указана
+      if (folderId && newFolders[folderId]) {
+        newFolders[folderId]!.pages.push(pageRoute);
+      }
+      
+      return newFolders;
+    });
+  };
+
+  // Получаем страницы, не находящиеся в папках
+  const unassignedPages = useMemo(() => {
+    const assignedRoutes = new Set<string>();
+    Object.values(folders).forEach(folder => {
+      folder.pages.forEach(route => assignedRoutes.add(route));
+    });
+    
+    return localRows.filter(page => !assignedRoutes.has(page.route));
+  }, [localRows, folders]);
+
+  // Компонент для отображения строки страницы
+  const PageRow = ({ page, showFolderActions = false }: { page: Row; showFolderActions?: boolean }) => {
+    const slug = page.route.replace(/^\/+/, "");
+    const canDelete = !page.protected && !page.isDynamic;
+    const loading = deletingSlug === slug;
+    
+    return (
+      <TableRow key={page.route}>
+        {/* Название страницы */}
+        <TableCell className="whitespace-nowrap">
+          {prettyName(page.route)}
+        </TableCell>
+
+        {/* Путь */}
+        <TableCell className="text-default-500">
+          <code className="text-sm">{page.route}</code>
+        </TableCell>
+
+        {/* Действия: иконки */}
+        <TableCell className="space-x-2 w-24">
+          {/* Открыть: только для не-динамических */}
+          {!(page.isDynamic || /\[[^\]]+\]/.test(page.route)) ? (
+            <Tooltip content="Открыть" placement="top">
+              <Button
+                as={Link}
+                href={page.route}
+                isIconOnly
+                variant="light"
+                size="sm"
+                aria-label="Открыть"
+              >
+                <ExternalLink className="size-4" />
+              </Button>
+            </Tooltip>
+          ) : (
+            <span className="text-default-300 text-xs align-middle">Шаблон</span>
+          )}
+
+          {/* Удалить: только если можно удалять */}
+          {canDelete && (
+            <Tooltip content="Удалить" placement="top">
+              <Button
+                color="danger"
+                variant="flat"
+                size="sm"
+                isIconOnly
+                onPress={()=>handleDelete(slug)}
+                isDisabled={loading}
+                isLoading={loading}
+                aria-label="Удалить"
+              >
+                <Trash2 className="size-4" />
+              </Button>
+            </Tooltip>
+          )}
+
+          {/* Действия с папками */}
+          {showFolderActions && (
+            <Tooltip content="Переместить в папку" placement="top">
+              <select 
+                className="text-xs border rounded px-1 py-0.5"
+                value=""
+                onChange={(e) => {
+                  const folderId = e.target.value || null;
+                  movePageToFolder(page.route, folderId);
+                }}
+              >
+                <option value="">Без папки</option>
+                {Object.values(folders).map(folder => (
+                  <option key={folder.id} value={folder.id}>{folder.name}</option>
+                ))}
+              </select>
+            </Tooltip>
+          )}
+        </TableCell>
+      </TableRow>
+    );
+  };
+
+  async function handleCreate(e: React.FormEvent) {
+    e.preventDefault();
+    setCreateErr(null);
+    if (!title.trim()) { setCreateErr("Пустой заголовок"); return; }
+    setCreating(true);
+    try {
+      const res = await fetch("/api/admin/pages", {
+        method: "POST",
+        headers: { "content-type":"application/json" },
+        body: JSON.stringify({ title }),
+      });
+      const json = await res.json();
+      if (!json?.ok) throw new Error(json?.error || "Create failed");
+      // оптимизм: добавить строку
+      const route = json.path as string;
+      setLocalRows(prev => [...prev, { route, file: `app/(app)${route}/page.tsx`, isDynamic:false, protected:false }].sort((a,b)=>a.route.localeCompare(b.route)));
+      setTitle("");
+      setCreateOpen(false);
+      router.refresh();
+    } catch (err:any) {
+      setCreateErr(err?.message || "Ошибка");
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  async function handleDelete(slug: string) {
+    setDeletingSlug(slug);
+    try {
+      await fetch("/api/admin/pages", {
+        method: "DELETE",
+        headers: { "content-type":"application/json" },
+        body: JSON.stringify({ slug }),
+      });
+      // оптимистично убрать строку
+      setLocalRows(prev => prev.filter(r => r.route.replace(/^\/+/,"") !== slug));
+      router.refresh();
+    } finally {
+      setDeletingSlug(null);
+    }
+  }
+
+  return (
+    <>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-medium">Страницы</h3>
+        <div className="flex gap-2">
+          <Button 
+            color="secondary" 
+            variant="flat"
+            startContent={<Plus className="size-4" />}
+            onPress={()=>setCreateFolderOpen(true)}
+          >
+            Создать папку
+          </Button>
+          <Button color="primary" onPress={()=>setCreateOpen(true)}>Добавить страницу</Button>
+        </div>
+      </div>
+
+      <div key={localRows.length} className="space-y-4">
+        {/* Папки */}
+        {Object.values(folders).length > 0 && (
+          <div className="space-y-3">
+            {Object.values(folders).map(folder => {
+              const folderPages = localRows.filter(page => folder.pages.includes(page.route));
+              const isExpanded = expandedFolders.has(folder.id);
+              return (
+                <div key={folder.id} className="w-full border border-default-200 rounded-lg overflow-hidden">
+                  <div className="p-0">
+                    {/* Заголовок папки */}
+                    <div 
+                      className="flex items-center justify-between p-4 cursor-pointer hover:bg-default-50 transition-colors"
+                      onClick={() => toggleFolder(folder.id)}
+                    >
+                      <div className="flex items-center gap-2">
+                        {isExpanded ? <FolderOpen className="size-4" /> : <Folder className="size-4" />}
+                        <span className="font-medium">{folder.name}</span>
+                        <span className="text-default-500 text-sm">({folderPages.length})</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="light"
+                          color="danger"
+                          isIconOnly
+                          onPress={() => deleteFolder(folder.id)}
+                        >
+                          <Trash2 className="size-3" />
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    {/* Содержимое папки */}
+                    {isExpanded && (
+                      <div className="border-t">
+                        <div className="overflow-x-auto">
+                          <Table aria-label={`Pages in ${folder.name}`} className="w-full">
+                            <TableHeader>
+                              <TableColumn>
+                                <div className="flex items-center gap-2 cursor-pointer hover:text-primary transition-colors" onClick={() => handleSort('name')}>
+                                  <span>Название страницы</span>
+                                  {getSortIcon('name')}
+                                </div>
+                              </TableColumn>
+                              <TableColumn>
+                                <div className="flex items-center gap-2 cursor-pointer hover:text-primary transition-colors" onClick={() => handleSort('route')}>
+                                  <span>Путь</span>
+                                  {getSortIcon('route')}
+                                </div>
+                              </TableColumn>
+                              <TableColumn className="w-24">Действия</TableColumn>
+                            </TableHeader>
+                            <TableBody emptyContent="Папка пуста">
+                              {folderPages.map(page => (
+                                <PageRow key={page.route} page={page} showFolderActions={true} />
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Неприсвоенные страницы */}
+        {unassignedPages.length > 0 && (
+          <div>
+            <h4 className="text-md font-medium mb-2 flex items-center gap-2">
+              <Folder className="size-4" />
+              Неприсвоенные страницы
+            </h4>
+            <div className="overflow-x-auto">
+              <Table aria-label="Unassigned Pages" className="w-full">
+                <TableHeader>
+                  <TableColumn>
+                    <div className="flex items-center gap-2 cursor-pointer hover:text-primary transition-colors" onClick={() => handleSort('name')}>
+                      <span>Название страницы</span>
+                      {getSortIcon('name')}
+                    </div>
+                  </TableColumn>
+                  <TableColumn>
+                    <div className="flex items-center gap-2 cursor-pointer hover:text-primary transition-colors" onClick={() => handleSort('route')}>
+                      <span>Путь</span>
+                      {getSortIcon('route')}
+                    </div>
+                  </TableColumn>
+                  <TableColumn className="w-24">Действия</TableColumn>
+                </TableHeader>
+                <TableBody emptyContent="Страниц нет">
+                  {unassignedPages.map(page => (
+                    <PageRow key={page.route} page={page} showFolderActions={true} />
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        )}
+
+        {/* Если нет папок и страниц */}
+        {Object.values(folders).length === 0 && unassignedPages.length === 0 && (
+          <div className="text-center py-8 text-default-500">
+            <Folder className="size-12 mx-auto mb-4 opacity-50" />
+            <p>Страниц пока нет</p>
+            <p className="text-sm">Создайте первую страницу или папку для организации</p>
+          </div>
+        )}
+      </div>
+
+      <Modal isOpen={createOpen} onOpenChange={setCreateOpen}>
+        <ModalContent>
+          <ModalHeader>Новая страница</ModalHeader>
+          <form onSubmit={handleCreate}>
+            <ModalBody>
+              <Input name="title" label="Заголовок" value={title} onChange={e=>setTitle(e.target.value)} autoFocus />
+              {createErr && <p className="text-danger text-sm">{createErr}</p>}
+            </ModalBody>
+            <ModalFooter>
+              <Button variant="light" type="button" onPress={()=>setCreateOpen(false)}>Отмена</Button>
+              <Button color="primary" type="submit" isDisabled={creating} isLoading={creating}>Создать</Button>
+            </ModalFooter>
+          </form>
+        </ModalContent>
+      </Modal>
+
+      <Modal isOpen={createFolderOpen} onOpenChange={setCreateFolderOpen}>
+        <ModalContent>
+          <ModalHeader>Создать папку</ModalHeader>
+          <form onSubmit={createFolder}>
+            <ModalBody>
+              <Input 
+                name="folderName" 
+                label="Название папки" 
+                value={folderName} 
+                onChange={e=>setFolderName(e.target.value)} 
+                autoFocus 
+                placeholder="Например: Админка, Пользователи, Настройки"
+              />
+            </ModalBody>
+            <ModalFooter>
+              <Button variant="light" type="button" onPress={()=>setCreateFolderOpen(false)}>Отмена</Button>
+              <Button color="primary" type="submit" isDisabled={creatingFolder || !folderName.trim()} isLoading={creatingFolder}>
+                Создать папку
+              </Button>
+            </ModalFooter>
+          </form>
+        </ModalContent>
+      </Modal>
+    </>
+  );
+}

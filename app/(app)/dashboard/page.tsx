@@ -13,7 +13,6 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Доступные страницы</h1>
       <ul className="list-inside list-disc space-y-1">
         {((session?.user as { pages?: string[] })?.pages as string[] | undefined)?.map((p: string) => (
           <li key={p}>

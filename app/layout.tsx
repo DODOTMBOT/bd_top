@@ -1,23 +1,22 @@
 import "@/app/globals.css";
-import { HeroUIProvider } from "@heroui/react";
-import { ThemeProvider as NextThemesProvider } from "next-themes";
-import AuthProvider from '@/components/auth/AuthProvider';
-import AppNavbar from '@/components/shell/AppNavbar';
+import { Providers } from "./providers";
 
+export const revalidate = 0;
 export const runtime = "nodejs";
+
+export const metadata = {
+  title: "HoReCa SaaS",
+  description: "Система управления ресторанным бизнесом",
+  icons: {
+    icon: "/favicon.ico",
+  },
+};
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ru" suppressHydrationWarning>
       <body className="min-h-screen bg-background text-foreground antialiased">
-        <NextThemesProvider attribute="class" defaultTheme="system" enableSystem>
-          <HeroUIProvider>
-            <AuthProvider>
-              <AppNavbar />
-              <main className="container py-6">{children}</main>
-            </AuthProvider>
-          </HeroUIProvider>
-        </NextThemesProvider>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
