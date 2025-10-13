@@ -4,7 +4,7 @@ import { getSessionQuick } from '@/lib/session';
 import { prisma } from '@/lib/prisma';
 import { match } from 'path-to-regexp';
 
-const PUBLIC = ['/', '/login', '/register', '/api/diag/db', '/_next', '/favicon', '/public', '/roles', '/owner', '/partner', '/point', '/employee'];
+const PUBLIC = ['/', '/login', '/register', '/api/diag/db', '/_next', '/favicon', '/public', '/roles', '/owner', '/partner', '/point', '/employee', '/blocked', '/logout'];
 
 export async function middleware(req: NextRequest) {
   const p = req.nextUrl.pathname;
@@ -12,16 +12,26 @@ export async function middleware(req: NextRequest) {
   // Публичные маршруты
   if (PUBLIC.some(s => p.startsWith(s))) return NextResponse.next();
 
-  // Пример: защищаем только /admin/* RBAC'ом,
-  // остальное оставить как есть (не ломаем текущие механизмы)
-  if (!p.startsWith('/admin')) return NextResponse.next();
-
   const sess = await getSessionQuick(); // { userId, roles: string[] } | null
   if (!sess?.userId) {
     const url = new URL('/login', req.url);
     url.searchParams.set('callbackUrl', req.nextUrl.pathname);
     return NextResponse.redirect(url);
   }
+
+  // Проверяем блокировку пользователя для всех защищенных маршрутов
+  const user = await (prisma as any).user.findUnique({
+    where: { id: sess.userId },
+    select: { isBlocked: true }
+  });
+
+  if (user?.isBlocked) {
+    return NextResponse.redirect(new URL('/blocked', req.url));
+  }
+
+  // Пример: защищаем только /admin/* RBAC'ом,
+  // остальное оставить как есть (не ломаем текущие механизмы)
+  if (!p.startsWith('/admin')) return NextResponse.next();
 
   // Разрешение: owner всегда проходит
   if (sess.roles?.includes('owner')) return NextResponse.next();
@@ -60,7 +70,16 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*'],
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - api (API routes)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     */
+    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+  ],
 };
 
 

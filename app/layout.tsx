@@ -1,8 +1,7 @@
-import "@/app/globals.css";
-import { Providers } from "./providers";
+import './globals.css'
+import ClientProviders from '@/components/ClientProviders'
 
-export const revalidate = 0;
-export const runtime = "nodejs";
+export const runtime = 'nodejs'
 
 export const metadata = {
   title: "HoReCa SaaS",
@@ -14,9 +13,9 @@ export const metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ru" suppressHydrationWarning>
-      <body className="min-h-screen bg-background text-foreground antialiased">
-        <Providers>{children}</Providers>
+    <html lang="ru">
+      <body>
+        <ClientProviders>{children}</ClientProviders>
       </body>
     </html>
   );

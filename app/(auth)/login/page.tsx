@@ -9,10 +9,9 @@ function LoginForm() {
   const search = useSearchParams()
   const router = useRouter()
   const callbackUrl = search.get('cb') || '/'
-  const registeredEmail = search.get('email')
   const justRegistered = search.get('registered') === '1'
 
-  const [identifier, setIdentifier] = useState('')
+  const [login, setLogin] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -21,27 +20,29 @@ function LoginForm() {
     if (status === 'authenticated') router.replace(callbackUrl)
   }, [status, callbackUrl, router])
 
-  useEffect(() => {
-    if (registeredEmail) {
-      setIdentifier(registeredEmail)
-    }
-  }, [registeredEmail])
-
   async function onSubmit(e: FormEvent) {
     e.preventDefault()
     setLoading(true)
     setError(null)
+    
     const res = await signIn('credentials', {
       redirect: false,
       callbackUrl: callbackUrl,
-      identifier: identifier.trim().toLowerCase(),
+      login: login.trim(),
       password,
     })
+    
     setLoading(false)
+    
     if (res?.error) {
-      setError('Неверный email или пароль')
+      if (res.error === 'INVALID_CREDENTIALS') {
+        setError('Неверный логин или пароль')
+      } else {
+        setError('Ошибка входа. Попробуйте еще раз.')
+      }
       return
     }
+    
     // Успешный логин — редирект на callbackUrl или url из ответа
     router.push(res?.url || callbackUrl)
   }
@@ -52,14 +53,14 @@ function LoginForm() {
       <form onSubmit={onSubmit} className="space-y-3">
         {justRegistered && (
           <div className="rounded border border-green-300 bg-green-50 p-2 text-sm">
-            Аккаунт создан. Войдите, используя ваш email и пароль.
+            Аккаунт создан. Войдите, используя ваш логин и пароль.
           </div>
         )}
         <input
           type="text"
-          value={identifier}
-          onChange={(e) => setIdentifier(e.target.value)}
-          placeholder="Email или логин"
+          value={login}
+          onChange={(e) => setLogin(e.target.value)}
+          placeholder="Логин"
           className="w-full border rounded px-3 py-2"
           required
         />

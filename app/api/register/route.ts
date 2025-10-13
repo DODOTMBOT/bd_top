@@ -4,7 +4,8 @@ export const runtime = 'nodejs';
 import { z } from 'zod'
 import bcryptjs from 'bcryptjs'
 import { prisma, dbPing, isP1001 } from '@/lib/prisma'
-import { UserRoleType } from '@prisma/client'
+import { ensureSessionVersionColumn } from '@/lib/db/ensureSessionVersion'
+import { Role } from '@prisma/client'
 
 const registerSchema = z.object({
   email: z.string().email(),
@@ -17,41 +18,47 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Public signup disabled' }, { status: 403 })
   }
 
-  let body: unknown
   try {
-    body = await req.json()
-  } catch {
-    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
-  }
+    await ensureSessionVersionColumn();
+    const raw = await req.json()
+    const email = String(raw.email ?? '').trim().toLowerCase()
+    const password = String(raw.password ?? '')
+    const name = String(raw.name ?? '').trim()
 
-  const parsed = registerSchema.safeParse(body)
-  if (!parsed.success) {
-    return NextResponse.json({ error: 'Validation failed', details: parsed.error.flatten() }, { status: 400 })
-  }
-
-  const { email, password, name } = parsed.data
-
-  const up = await dbPing(1000)
-  if (!up) {
-    return NextResponse.json({ error: 'DB_UNAVAILABLE' }, { status: 503 })
-  }
-
-  try {
-    const existing = await prisma.user.findUnique({ where: { email } })
-    if (existing) {
-      return NextResponse.json({ error: 'Email already in use' }, { status: 409 })
+    if (!email || !password) {
+      return NextResponse.json({ error: 'VALIDATION_ERROR' }, { status: 400 })
     }
 
-    const passwordHash = await bcryptjs.hash(password, 10)
-    await prisma.user.create({
-      data: { email, name: name || null, passwordHash, role: UserRoleType.EMPLOYEE },
+    const up = await dbPing(1000)
+    if (!up) {
+      return NextResponse.json({ error: 'DB_UNAVAILABLE' }, { status: 503 })
+    }
+
+    const exists = await prisma.user.findUnique({ where: { email } })
+    if (exists) {
+      return NextResponse.json({ error: 'EMAIL_IN_USE' }, { status: 409 })
+    }
+
+    const hash = await bcryptjs.hash(password, 11)
+
+    const result = await prisma.$transaction(async (tx) => {
+      const user = await tx.user.create({
+        data: { email, name: name || null, passwordHash: hash, role: Role.USER },
+        select: { id: true }
+      })
+      return user
     })
-    return NextResponse.json({ ok: true }, { status: 201 })
-  } catch (e) {
+
+    return NextResponse.json({ ok: true, userId: result.id }, { status: 201 })
+  } catch (e: any) {
+    if (e?.code === 'P2002' && Array.isArray(e?.meta?.target) && e.meta.target.includes('email')) {
+      return NextResponse.json({ error: 'EMAIL_IN_USE' }, { status: 409 })
+    }
     if (isP1001(e)) {
       return NextResponse.json({ error: 'DB_UNAVAILABLE' }, { status: 503 })
     }
-    return NextResponse.json({ error: 'unexpected' }, { status: 500 })
+    console.error('REGISTER_ERROR', e)
+    return NextResponse.json({ error: 'REGISTRATION_FAILED' }, { status: 500 })
   }
 }
 

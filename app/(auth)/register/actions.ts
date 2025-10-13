@@ -26,7 +26,7 @@ export async function registerPartnerAction({ name, email, password, partnerName
       return { ok: false, code: "CONFLICT", message: "Этот email уже зарегистрирован" };
     }
 
-    const passwordHash = await bcrypt.hash(password, 10);
+    const passwordHash = await bcrypt.hash(password, 11);
 
     // Создаем Partner и User в транзакции
     const result = await prisma.$transaction(async (tx) => {
@@ -44,7 +44,7 @@ export async function registerPartnerAction({ name, email, password, partnerName
       const partner = await tx.partner.create({ 
         data: { 
           name: partnerName ?? "Новый партнёр",
-          account: { connect: { id: user.id } }
+          userId: user.id
         }
       });
 
@@ -62,14 +62,15 @@ export async function registerPartnerAction({ name, email, password, partnerName
     }
 
     return { ok: true, userId: result.user.id, role: result.user.role, partnerId: result.partner.id };
-  } catch (e: unknown) {
-    if ((e as { code?: string; message?: string })?.code === "P2002" || /unique/i.test(String((e as { message?: string })?.message))) {
+  } catch (e: any) {
+    if (e?.code === 'P2002' && Array.isArray(e?.meta?.target) && e.meta.target.includes('email')) {
       return { ok: false, code: "CONFLICT", message: "Этот email уже зарегистрирован" };
     }
     if (isP1001(e)) {
       return { ok: false, code: "DB_UNAVAILABLE", message: "База данных недоступна" };
     }
-    return { ok: false, code: "UNKNOWN", message: "Не удалось зарегистрироваться" };
+    console.error('REGISTER_ERROR', e);
+    return { ok: false, code: "UNKNOWN", message: "Сервис временно недоступен" };
   }
 }
 

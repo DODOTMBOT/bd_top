@@ -7,22 +7,143 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Partner {
+  id          String   @id @default(cuid())
+  name        String
+  ownerUserId String?  @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  owner       User?    @relation("PartnerOwner", fields: [ownerUserId], references: [id], onDelete: Cascade)
+
+  @@index([ownerUserId])
+}
+
+model Point {
+  id             String   @id @default(cuid())
+  name           String
+  address        String
+
+  // Владелец-точки — пользователь с ролью PARTNER
+  partnerUserId  String
+  partnerUser    User     @relation("PartnerPoints", fields: [partnerUserId], references: [id])
+
+  // Логин точки — отдельный пользователь с ролью POINT
+  pointUserId    String   @unique
+  pointUser      User     @relation("PointLoginUser", fields: [pointUserId], references: [id])
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([partnerUserId])
+}
+
+model User {
+  id           String   @id @default(cuid())
+  login        String   @unique
+  email        String?  @unique
+  name         String?
+  passwordHash String
+  role         Role
+
+  // Для точки: если этот User — POINT, он может быть привязан к Point как pointUser
+  point        Point?   @relation("PointLoginUser")
+
+  // Для партнёра: его точки (косвенно через Point.partnerUserId)
+  pointsOwned  Point[]  @relation("PartnerPoints")
+  
+  // Для партнёра: его партнерство
+  partner      Partner? @relation("PartnerOwner")
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  actorUserId  String?
+  targetUserId String?
+  action       String
+  meta         Json?
+  createdAt    DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([action])
+}
+
+model Menu {
+  id        String   @id @default(cuid())
+  label     String
+  path      String   @unique
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Folder {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  order     Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([order])
+}
+
 model RolePageAccess {
   roleKey String
   path    String
-  allowed Boolean  @default(false)
+  allowed Boolean @default(false)
 
   @@id([roleKey, path])
   @@index([roleKey])
   @@index([path])
 }
 
-model AdminUser {
-  id        String  @id @default(cuid())
-  email     String  @unique
-  roleKey   String
-  pointName String?
-  active    Boolean @default(true)
-
-  @@index([roleKey])
+model Plan {
+  id           String   @id @default(cuid())
+  name         String
+  slug         String   @unique
+  description  String?
+  priceMonthly Int      @default(0)
+  priceYearly  Int      @default(0)
+  isPopular    Boolean  @default(false)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
+
+model SubscriptionPlan {
+  id                String     @id @default(cuid())
+  slug              String     @unique
+  name              String
+  tagline           String?
+  priceMonthlyCents Int
+  priceYearlyCents  Int?
+  defaultPeriod     PlanPeriod @default(month)
+  popular           Boolean    @default(false)
+  badge             String?
+  includedModules   String?
+  limits            String?
+  sortOrder         Int        @default(100)
+  isActive          Boolean    @default(true)
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+
+  @@index([isActive])
+  @@index([sortOrder])
+}
+
+enum Role {
+  OWNER
+  PARTNER
+  POINT
+  EMPLOYEE
+  USER
+}
+
+enum PlanPeriod {
+  month
+  year
+}
+

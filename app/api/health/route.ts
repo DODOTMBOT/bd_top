@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+export const runtime = 'nodejs'
 export async function GET() {
-  return NextResponse.json({ ok: true }, { status: 200 });
+  return new Response('OK', { status: 200 })
 }

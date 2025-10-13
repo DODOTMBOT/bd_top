@@ -1,7 +1,14 @@
 "use client";
-
 import { HeroUIProvider } from "@heroui/react";
+import { DialogCenterProvider } from "@/components/ui/DialogCenter";
+import ProvidersInner from "@/app/providers-inner";
 
-export function Providers({ children }: { children: React.ReactNode }) {
-  return <HeroUIProvider>{children}</HeroUIProvider>;
+export default function Providers({ children }: { children: React.ReactNode }) {
+  return (
+    <HeroUIProvider>
+      <DialogCenterProvider>
+        <ProvidersInner>{children}</ProvidersInner>
+      </DialogCenterProvider>
+    </HeroUIProvider>
+  );
 }

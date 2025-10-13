@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { auth, signOut } from "@/lib/auth";
+import { roleLabel } from "@/lib/roles";
 
 export default async function SiteHeader() {
   const session = await auth();
@@ -22,7 +23,7 @@ export default async function SiteHeader() {
       <div className="ml-auto flex items-center gap-3 text-sm">
         {session?.user ? (
           <>
-            <span>{session.user.email}{role ? ` (${role})` : ""}</span>
+            <span>{session.user.email}{role ? ` (${roleLabel(role as any)})` : ""}</span>
             <form action={doSignOut}>
               <button type="submit" className="border rounded px-2 py-1">Выйти</button>
             </form>

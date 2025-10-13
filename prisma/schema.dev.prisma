@@ -10,11 +10,13 @@ datasource db {
 model Partner {
   id        String   @id @default(cuid())
   name      String
-  accountId String   @unique
+  userId    String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  account   User     @relation("PartnerAccount", fields: [accountId], references: [id], onUpdate: Restrict)
+  user      User     @relation("PartnerAccount", fields: [userId], references: [id], onDelete: Cascade)
   points    Point[]
+
+  @@index([userId])
 }
 
 model Point {
@@ -22,14 +24,15 @@ model Point {
   name      String
   address   String?
   partnerId String
-  accountId String   @unique
+  userId    String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  account   User     @relation("PointAccount", fields: [accountId], references: [id], onUpdate: Restrict)
-  partner   Partner  @relation(fields: [partnerId], references: [id], onUpdate: Restrict)
+  user      User     @relation("PointAccount", fields: [userId], references: [id], onDelete: Cascade)
+  partner   Partner  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
   employees User[]   @relation("PointEmployees")
 
   @@index([partnerId])
+  @@index([userId])
 }
 
 model User {
@@ -41,13 +44,12 @@ model User {
   role               Role
   mustChangePassword Boolean  @default(false)
   pointId            String?
-  partnerId          String?
   isActive           Boolean  @default(true)
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
-  partnerAccount     Partner? @relation("PartnerAccount")
-  pointAccount       Point?   @relation("PointAccount")
-  point              Point?   @relation("PointEmployees", fields: [pointId], references: [id], onUpdate: Restrict)
+  partnerAccounts    Partner[] @relation("PartnerAccount")
+  pointAccounts      Point[]   @relation("PointAccount")
+  point              Point?   @relation("PointEmployees", fields: [pointId], references: [id], onDelete: SetNull)
 
   @@index([role])
   @@index([pointId])

@@ -27,8 +27,22 @@ export default function RolesTab(): JSX.Element {
   });
 
   const loadOne = async (role: Role["id"]) => {
-    const res = await fetch(`/api/admin/access/summary?role=${role}`).then(r => r.json());
-    setStats(s => ({ ...s, [role]: { allowedCount: res.allowedCount ?? 0, totalCount: res.totalCount ?? 0 } }));
+    const res = await fetch(`/api/admin/access/summary?role=${role}`, { cache: 'no-store' });
+    let data = { allowedCount: 0, totalCount: 0 };
+
+    if (res.ok && res.headers.get('content-type')?.includes('application/json')) {
+      try { data = await res.json(); } catch { /* пустое тело — оставляем дефолт */ }
+    } else {
+      console.warn('/api/admin/access/summary non-JSON or !ok', res.status);
+    }
+
+    setStats((s) => ({
+      ...s,
+      [role]: {
+        allowedCount: Number(data.allowedCount) || 0,
+        totalCount: Number(data.totalCount) || 0,
+      },
+    }));
   };
 
   useEffect(() => {

@@ -1,25 +1,20 @@
-import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/src/lib/prisma";
-import { z } from "zod";
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
-const Body = z.object({ roleKey: z.enum(["owner","partner","manager","employee"]) });
+import { NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
 
-export async function PUT(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  const json = await req.json().catch(() => null);
-  const parsed = Body.safeParse(json);
-  if (!parsed.success) {
-    return NextResponse.json({ error: "INVALID_BODY" }, { status: 400 });
-  }
-  try {
-    const updated = await prisma.adminUser.update({
-      where: { id: params.id },
-      data: { roleKey: parsed.data.roleKey },
-    });
-    return NextResponse.json({ ok: true, user: updated }, { status: 200 });
-  } catch (e) {
-    return NextResponse.json({ error: "DB_UNAVAILABLE" }, { status: 503 });
-  }
+const ROLES = ['OWNER','PARTNER','POINT','USER'] as const
+type Role = (typeof ROLES)[number]
+
+export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+  const { role } = await req.json() as { role: Role }
+  if (!ROLES.includes(role as Role)) return NextResponse.json({ error: 'BAD_ROLE' }, { status: 400 })
+
+  const user = await (prisma as any).user.update({
+    where: { id: params.id },
+    data: { role },
+    select: { id: true, role: true }
+  })
+  return NextResponse.json(user)
 }

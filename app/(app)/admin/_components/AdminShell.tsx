@@ -4,30 +4,65 @@ import { Card, Tabs, Tab } from "@heroui/react";
 import PagesTab from "./PagesTab";
 import RolesTab from "./RolesTab";
 import UsersTab from "./UsersTab";
+import MenuTab from "./MenuTab";
+import PlansTab from "./PlansTab";
+import PartnersTab from "./PartnersTab";
 
 type PageRow = { route:string; file:string; isDynamic:boolean; protected:boolean; kind:string };
 
+type Plan = {
+  id: string;
+  slug: string;
+  name: string;
+  tagline?: string | null;
+  priceMonthlyCents: number;
+  priceYearlyCents?: number | null;
+  defaultPeriod: 'month' | 'year';
+  popular: boolean;
+  badge?: string | null;
+  includedModules?: string | null;
+  limits?: string | null;
+  sortOrder: number;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
 type Item = {
-  key: "pages" | "roles" | "users";
+  key: "pages" | "roles" | "users" | "partners" | "menu" | "subscriptions";
   title: string;
   content: JSX.Element;
 };
 
 export default function AdminShell({
   pages,
+  plans,
 }:{
   pages: PageRow[];
+  plans: Plan[];
 }) {
   const ITEMS: Item[] = [
-    { key: "pages", title: "Страницы", content: <PagesTab pages={pages} /> },
+    { key: "pages", title: "Страницы", content: <PagesTab /> },
     { key: "roles", title: "Роли", content: <RolesTab /> },
     { key: "users", title: "Пользователи", content: <UsersTab /> },
+    { key: "partners", title: "Партнеры", content: <PartnersTab /> },
+    { key: "menu", title: "Меню", content: <MenuTab /> },
+    { key: "subscriptions", title: "Подписка", content: <PlansTab /> },
   ];
 
   return (
     <div className="p-4 space-y-4">
       <Card className="p-4">
-        <Tabs aria-label="Admin Tabs" color="primary" variant="underlined" defaultSelectedKey="pages" items={ITEMS}>
+        <Tabs
+          aria-label="Админ-вкладки"
+          items={ITEMS}
+          variant="solid"
+          color="primary"
+          radius="lg"
+          size="md"
+          className="w-full"
+          defaultSelectedKey="pages"
+        >
           {(item) => (
             <Tab key={item.key} title={item.title}>
               <div className="mt-4">{item.content}</div>

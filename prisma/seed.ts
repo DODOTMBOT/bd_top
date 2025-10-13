@@ -1,29 +1,19 @@
-import { PrismaClient } from "@prisma/client";
-
+const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
 async function main() {
-  const users = [
-    { email: "owner@example.com", roleKey: "owner", pointName: null, active: true },
-    { email: "partner@example.com", roleKey: "partner", pointName: "Cafe Aurora", active: true },
-    { email: "manager@example.com", roleKey: "manager", pointName: "Bar Nebula", active: true },
-    { email: "staff@example.com", roleKey: "employee", pointName: "Cafe Aurora", active: false },
+  const items = [
+    { label: "Profile", path: "/profile", order: 0 },
+    { label: "Admin", path: "/admin", order: 1 },
+    { label: "Marketpleys", path: "/marketpleys", order: 2 },
+    { label: "Pricing", path: "/pricing", order: 3 },
   ];
-
-  for (const u of users) {
-    await prisma.adminUser.upsert({
-      where: { email: u.email },
-      create: u,
-      update: u,
+  
+  for (const item of items) {
+    await prisma.menu.create({
+      data: item,
     });
   }
 }
 
-main()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+main().finally(() => prisma.$disconnect());
