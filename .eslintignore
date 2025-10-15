@@ -1,0 +1,18 @@
+# Ignore nested copies/clones of the project
+bd_top/
+bd_top-2/
+bd_top_clone/
+**/bd_top/**
+**/bd_top-2/**
+**/bd_top_clone/**
+
+# Build artifacts
+.next/
+.out/
+
+# Generated types
+next-env.d.ts
+**/.next/**
+
+# Prisma seeds and generated
+prisma/seed.ts
