@@ -1,0 +1,14 @@
+[Unit]
+Description=Persistent SSH Tunnel to Timeweb PostgreSQL
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStart=/usr/bin/ssh -N -L 5433:910e913fe01583491138102e.twc1.net:5432 -i /root/.ssh/macbook-emil -o ServerAliveInterval=60 -o ExitOnForwardFailure=yes -o StrictHostKeyChecking=accept-new root@46.149.67.79
+Restart=always
+RestartSec=10
+User=root
+
+[Install]
+WantedBy=multi-user.target
+
