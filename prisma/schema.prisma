@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -44,6 +44,7 @@ model User {
   name         String?
   passwordHash String
   role         Role
+  roleId       String?
 
   // Для точки: если этот User — POINT, он может быть привязан к Point как pointUser
   point        Point?   @relation("PointLoginUser")
@@ -53,6 +54,9 @@ model User {
   
   // Для партнёра: его партнерство
   partner      Partner? @relation("PartnerOwner")
+
+  // Связь с ролью для системы доступа
+  roleRelation AccessRole?    @relation(fields: [roleId], references: [id])
 
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -90,15 +94,7 @@ model Folder {
   @@index([order])
 }
 
-model RolePageAccess {
-  roleKey String
-  path    String
-  allowed Boolean @default(false)
-
-  @@id([roleKey, path])
-  @@index([roleKey])
-  @@index([path])
-}
+// Removed old composite-key RolePageAccess in favor of id-based model below
 
 model Plan {
   id           String   @id @default(cuid())
@@ -145,5 +141,52 @@ enum Role {
 enum PlanPeriod {
   month
   year
+}
+
+// Система управления доступом
+model AccessRole {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  users     User[]
+  accesses  AccessRolePageAccess[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AccessPage {
+  id        String   @id @default(cuid())
+  name      String
+  path      String   @unique
+  accesses  AccessRolePageAccess[]
+  // New simplified access records keyed by role name
+  roleAccesses RolePageAccess[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AccessRolePageAccess {
+  id        String   @id @default(cuid())
+  roleId    String
+  pageId    String
+  canAccess Boolean  @default(false)
+
+  role AccessRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  page AccessPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, pageId])
+}
+
+// Simplified access table keyed by roleName and linked to AccessPage
+model RolePageAccess {
+  id        String   @id @default(cuid())
+  roleName  String
+  pageId    String
+  allowed   Boolean  @default(true)
+
+  page AccessPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  @@index([roleName])
+  @@index([pageId])
+  @@unique([roleName, pageId])
 }
 
