@@ -1,10 +1,10 @@
-generator client {
-  provider = "prisma-client-js"
-}
-
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
 }
 
 model Partner {
@@ -159,7 +159,6 @@ model AccessPage {
   path      String   @unique
   accesses  AccessRolePageAccess[]
   // New simplified access records keyed by role name
-  roleAccesses RolePageAccess[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -176,17 +175,4 @@ model AccessRolePageAccess {
   @@unique([roleId, pageId])
 }
 
-// Simplified access table keyed by roleName and linked to AccessPage
-model RolePageAccess {
-  id        String   @id @default(cuid())
-  roleName  String
-  pageId    String
-  allowed   Boolean  @default(true)
-
-  page AccessPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
-
-  @@index([roleName])
-  @@index([pageId])
-  @@unique([roleName, pageId])
-}
 
