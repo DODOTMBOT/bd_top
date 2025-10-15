@@ -55,3 +55,17 @@ app/(app)/test-sync/
 # Prisma artifacts
 prisma/.env.bak
 prisma/prisma/dev.db
+
+# Cursor / debug logs
+USERS_TABLE_*.md
+
+# Prisma artifacts
+prisma/prisma/dev.db
+
+# Local env backups
+.env.local.backup.sqlite
+.env.local.backup.postgresql.demo
+
+# Generated test pages
+app/(app)/403/
+app/api/test-access/

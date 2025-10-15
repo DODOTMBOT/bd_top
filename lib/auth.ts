@@ -9,94 +9,94 @@ export const runtime = 'nodejs';
 import Credentials from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
-import { PrismaAdapter } from "@auth/prisma-adapter";
-import { Prisma } from "@prisma/client";
 
 type AppRole = 'OWNER' | 'PARTNER' | 'POINT' | 'USER';
+
+console.log("[AUTH DEBUG]", { 
+  url: process.env.NEXTAUTH_URL, 
+  secret: process.env.NEXTAUTH_SECRET ? "SET" : "MISSING" 
+});
 
 if (!process.env.NEXTAUTH_SECRET && !process.env.AUTH_SECRET) {
   console.error("[AUTH] Missing NEXTAUTH_SECRET in .env.local");
   throw new Error("NEXTAUTH_SECRET is missing");
 }
 
-export const { auth, handlers, signIn, signOut } = NextAuth({
-  secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET,
-  pages: { signIn: "/login" },
-  session: { strategy: "jwt" },
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  adapter: PrismaAdapter(prisma) as any,
-
+export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
     Credentials({
-      name: "credentials",
-      credentials: { 
-        login: { label: 'Логин', type: 'text' }, 
-        password: { label: 'Пароль', type: 'password' } 
+      name: "Credentials",
+      credentials: {
+        login: { label: "Login", type: "text" },
+        password: { label: "Password", type: "password" },
       },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      async authorize(credentials): Promise<any> {
-        const login = String(credentials?.login || "").trim();
-        const password = String(credentials?.password || "");
-
-        if (!login || !password) {
-          throw new Error('INVALID_CREDENTIALS');
-        }
-
+      async authorize(credentials) {
         try {
-          const user = await prisma.user.findUnique({
-            where: { login },
-            select: { 
-              id: true, 
-              login: true,
-              email: true, 
-              name: true, 
-              role: true, 
-              passwordHash: true,
-            },
-          });
+          console.log("DEBUG AUTH INPUT:", credentials);
 
-          if (!user || !user.passwordHash) {
-            throw new Error('INVALID_CREDENTIALS');
+          if (!credentials?.login || !credentials?.password) {
+            throw new Error("Missing credentials");
           }
 
-          const isValidPassword = await bcrypt.compare(password, user.passwordHash);
-          if (!isValidPassword) {
-            throw new Error('INVALID_CREDENTIALS');
+          const user = await prisma.user.findUnique({
+            where: { login: credentials.login },
+          });
+
+          console.log("FOUND USER:", user);
+
+          if (!user) {
+            throw new Error("User not found");
+          }
+
+          // Проверяем пароль с помощью bcrypt
+          const isValid = await bcrypt.compare(credentials.password, user.passwordHash);
+          if (!isValid) {
+            throw new Error("Invalid password");
           }
 
           return {
             id: user.id,
             login: user.login,
-            email: user.email,
-            name: user.name,
             role: user.role,
           };
-        } catch (e) {
-          if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P1001') {
-            throw new Error('INVALID_CREDENTIALS');
-          }
-          throw e;
+        } catch (error) {
+          console.error("AUTHORIZE ERROR:", error);
+          return null;
         }
       },
     }),
   ],
 
+  pages: {
+    signIn: "/login",
+  },
+
+  session: {
+    strategy: "jwt",
+  },
+
   callbacks: {
     async jwt({ token, user }) {
-      if (user) { 
-        token.id = (user as any).id; 
-        token.role = (user as any).role; 
-        token.sessionVersion = (user as any).sessionVersion ?? 1; 
+      if (user) {
+        token.id = user.id;
+        token.role = user.role;
+        token.login = user.login;
       }
       return token;
     },
     async session({ session, token }) {
-      (session.user as any).id = token.id;
-      (session.user as any).role = token.role;
-      (session.user as any).sessionVersion = token.sessionVersion ?? 1;
+      if (token) {
+        session.user = {
+          id: token.id,
+          role: token.role,
+          login: token.login,
+        };
+      }
       return session;
-    }
+    },
   },
+
+  secret: process.env.NEXTAUTH_SECRET,
 });
 
 // Expose route handlers for /api/auth/[...nextauth]
@@ -107,27 +107,30 @@ export const POST = handlers.POST;
 export async function requireUserId() {
   const session = await auth();
   if (!session?.user?.id) {
-    throw new Response("UNAUTHORIZED", { status: 401 });
+    throw new Error("Unauthorized");
   }
-  return session.user.id as string;
+  return session.user.id;
 }
 
 // Helper function to get current user from session
 export async function getSessionUser() {
   const session = await auth();
-  if (!session?.user?.id) return null;
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: { id: true, login: true, role: true },
-  });
-  return user;
+  if (!session?.user) {
+    throw new Error("Unauthorized");
+  }
+  return session.user;
 }
 
 // Helper function to require specific role
-export async function requireRole(role: "PARTNER") {
-  const user = await getSessionUser();
-  if (!user || user.role !== role) return null;
-  return user;
+export async function requireRole(role: AppRole) {
+  const session = await auth();
+  if (!session?.user) {
+    throw new Error("Unauthorized");
+  }
+  if (session.user.role !== role) {
+    throw new Error("Forbidden");
+  }
+  return session.user;
 }
 
 

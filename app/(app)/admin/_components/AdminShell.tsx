@@ -2,6 +2,7 @@
 
 import { Card, Tabs, Tab } from "@heroui/react";
 import PagesTab from "./PagesTab";
+import PagesAccessTab from "./PagesAccessTab";
 import RolesTab from "./RolesTab";
 import UsersTab from "./UsersTab";
 import MenuTab from "./MenuTab";
@@ -29,7 +30,7 @@ type Plan = {
 };
 
 type Item = {
-  key: "pages" | "roles" | "users" | "partners" | "menu" | "subscriptions";
+  key: "pages" | "pages-access" | "roles" | "users" | "partners" | "menu" | "subscriptions";
   title: string;
   content: JSX.Element;
 };
@@ -43,6 +44,7 @@ export default function AdminShell({
 }) {
   const ITEMS: Item[] = [
     { key: "pages", title: "Страницы", content: <PagesTab /> },
+    { key: "pages-access", title: "Доступ к страницам", content: <PagesAccessTab /> },
     { key: "roles", title: "Роли", content: <RolesTab /> },
     { key: "users", title: "Пользователи", content: <UsersTab /> },
     { key: "partners", title: "Партнеры", content: <PartnersTab /> },

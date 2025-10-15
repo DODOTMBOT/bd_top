@@ -1,11 +1,11 @@
-import { guard } from '@/lib/guard';
+import { checkAccess } from '@/lib/checkAccess';
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export default async function PointPage() {
-  await guard('/point');
+  await checkAccess('/point');
   return (
     <section className="space-y-2">
       <h1 className="text-2xl font-semibold">Точка</h1>

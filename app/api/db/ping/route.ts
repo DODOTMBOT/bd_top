@@ -1,3 +1,5 @@
+export const runtime = 'nodejs'
+
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";

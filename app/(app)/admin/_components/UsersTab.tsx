@@ -2,12 +2,13 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { Tooltip, Button, Chip, Select, SelectItem, Table, TableHeader, TableColumn, TableBody, TableRow, TableCell, Input, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure } from '@heroui/react'
+import { Tooltip, Button, Chip, Select, SelectItem, Table, TableHeader, TableColumn, TableBody, TableRow, TableCell, Input, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure, Badge } from '@heroui/react'
 import { formatShortRU } from '@/lib/formatDate'
 import { useAppDialog } from '@/lib/dialog'
 import { ROLE_LABEL_RU, ROLES_ORDER, Role } from '@/lib/roles'
-import { Check, X, KeyRound, Trash2, Lock, Unlock } from 'lucide-react'
+import { Check, X, KeyRound, Trash2, Lock, Unlock, CheckIcon, XIcon } from 'lucide-react'
 import { safeFetch } from '@/lib/safeFetch'
+import { cn } from '@/lib/cn'
 
 // Константы ширин колонок
 const COL = {
@@ -24,6 +25,17 @@ type Status = 'active'|'blocked'
 type UserRow = {
   id: string; email: string; name?: string|null; login?: string|null;
   role: Role; isBlocked: boolean; createdAt: string
+}
+
+// Функция для получения цвета роли
+function getRoleColor(role: Role): "default" | "primary" | "secondary" | "success" | "warning" | "danger" {
+  switch (role) {
+    case 'OWNER': return 'primary'
+    case 'PARTNER': return 'secondary' 
+    case 'POINT': return 'success'
+    case 'EMPLOYEE': return 'default'
+    default: return 'default'
+  }
 }
 
 async function toggleBlock(id: string) {
@@ -47,6 +59,14 @@ export default function UsersTab() {
   const [roleFilter, setRoleFilter] = useState<'ALL'|Role>('ALL')
   const [statusFilter, setStatusFilter] = useState<'ALL'|Status>('ALL')
   const [isCreating, setIsCreating] = useState(false)
+  const [currentPage, setCurrentPage] = useState(0)
+  const [pagination, setPagination] = useState({
+    page: 0,
+    totalPages: 0,
+    totalCount: 0,
+    hasNext: false,
+    hasPrev: false,
+  })
   const {isOpen, onOpen, onOpenChange} = useDisclosure()
   
   const handleOpenChange = (open: boolean) => {
@@ -64,13 +84,22 @@ export default function UsersTab() {
       setLoading(true)
       setError(null)
       try {
-        const res = await fetch('/api/admin/users')
+        const res = await fetch(`/api/admin/users?page=${currentPage}`)
         if (!res.ok) {
           const text = await res.text()
           throw new Error(`HTTP ${res.status}: ${text}`)
         }
-        const data: UserRow[] = await res.json()
-        if (!abort) setRows(data)
+        const data = await res.json()
+        if (!abort) {
+          setRows(data.users || [])
+          setPagination(data.pagination || {
+            page: 0,
+            totalPages: 0,
+            totalCount: 0,
+            hasNext: false,
+            hasPrev: false,
+          })
+        }
       } catch (e: any) {
         if (!abort) {
           setError(e?.message ?? 'Ошибка загрузки')
@@ -81,7 +110,7 @@ export default function UsersTab() {
       }
     })()
     return () => { abort = true }
-  }, [])
+  }, [currentPage])
 
   const filtered = useMemo(() => {
     return rows.filter(r => {
@@ -132,6 +161,7 @@ export default function UsersTab() {
       body: JSON.stringify({ role })
     })
   }
+
 
   async function resetPassword(id: string) {
     // Модалка: два поля через prompt нельзя — используем confirm-цепочку из DialogCenter (или отдельный компонент).
@@ -303,10 +333,9 @@ export default function UsersTab() {
                 </Link>
               </TableCell>
 
-              {/* Роль (Select, как ранее) */}
-              <TableCell className={COL.role}>
+              {/* Роль */}
+              <TableCell className="text-center align-middle min-w-[160px]">
                 <Select
-                  size="sm"
                   selectedKeys={[item.role]}
                   onSelectionChange={async (keys) => {
                     const next = Array.from(keys)[0] as Role
@@ -321,23 +350,35 @@ export default function UsersTab() {
                       await alert({ title: 'Ошибка', message: 'Не удалось сменить роль', variant: 'danger' })
                     }
                   }}
-                  className="w-full"
-                  classNames={{ trigger: 'h-9 w-full', value: 'truncate', base: 'w-full' }}
-                  popoverProps={{ placement: 'bottom-start' }}
-                  aria-label="Смена роли"
+                  className="w-[160px]"
                 >
-                  {ROLES_ORDER.map(r => (
-                    <SelectItem key={r}>{ROLE_LABEL_RU[r]}</SelectItem>
-                  ))}
+                  <SelectItem key="OWNER">Оунер</SelectItem>
+                  <SelectItem key="PARTNER">Партнёр</SelectItem>
+                  <SelectItem key="POINT">Точка</SelectItem>
+                  <SelectItem key="EMPLOYEE">Сотрудник</SelectItem>
                 </Select>
               </TableCell>
 
               {/* Компактный статус с иконкой */}
-              <TableCell className={`${COL.status} whitespace-nowrap`}>
+              <TableCell className="text-center align-middle min-w-[130px]">
                 {item.isBlocked ? (
-                  <Chip className="h-6 px-2" color="warning" variant="flat"><X className="h-4 w-4" /></Chip>
+                  <Badge
+                    variant="flat"
+                    color="warning"
+                    className="inline-flex items-center gap-1 px-2 py-1 text-sm"
+                  >
+                    <XIcon className="w-4 h-4" />
+                    Заблокирован
+                  </Badge>
                 ) : (
-                  <Chip className="h-6 px-2" color="success" variant="flat"><Check className="h-4 w-4" /></Chip>
+                  <Badge
+                    variant="flat"
+                    color="success"
+                    className="inline-flex items-center gap-1 px-2 py-1 text-sm"
+                  >
+                    <CheckIcon className="w-4 h-4" />
+                    Активен
+                  </Badge>
                 )}
               </TableCell>
 
@@ -471,6 +512,24 @@ export default function UsersTab() {
           )}
         </ModalContent>
       </Modal>
+      
+      {/* Пагинация */}
+      {pagination.totalPages > 1 && (
+        <div className="flex justify-center items-center gap-1 mt-4">
+          {Array.from({ length: pagination.totalPages }, (_, i) => (
+            <Button
+              key={i}
+              size="sm"
+              variant={currentPage === i ? "solid" : "flat"}
+              color={currentPage === i ? "primary" : "default"}
+              onPress={() => setCurrentPage(i)}
+              className="min-w-[32px] h-8"
+            >
+              {i + 1}
+            </Button>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

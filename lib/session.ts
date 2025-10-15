@@ -8,13 +8,29 @@ export async function getSessionQuick(): Promise<{ userId: string; roles: string
     const session = await auth();
     if (!session?.user?.id) return null;
 
-    // Получаем роли пользователя из RBAC
-    const userRoles = await prisma.userRole.findMany({
-      where: { userId: session.user.id },
-      include: { role: true },
+    // Получаем пользователя и его роль
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { role: true, roleId: true }
     });
 
-    const roles = userRoles.map(ur => ur.role.key);
+    if (!user) return null;
+
+    // Определяем роли пользователя
+    const roles = [];
+    if (user.role) {
+      roles.push(user.role);
+    }
+    if (user.roleId) {
+      // Если есть roleId, получаем роль из новой системы RBAC
+      const accessRole = await prisma.accessRole.findUnique({
+        where: { id: user.roleId },
+        select: { name: true }
+      });
+      if (accessRole) {
+        roles.push(accessRole.name);
+      }
+    }
     
     return {
       userId: session.user.id,

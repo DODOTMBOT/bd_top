@@ -1,4 +1,6 @@
 // app/api/partner/points/route.ts
+export const runtime = 'nodejs'
+
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
